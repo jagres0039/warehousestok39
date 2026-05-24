@@ -1,5 +1,6 @@
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { requireTenantSession } from "@/lib/session";
+import { prisma } from "@/lib/prisma";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +14,25 @@ export default async function DashboardPage({ params }: PageProps) {
   setRequestLocale(locale);
   const session = await requireTenantSession(locale);
   const t = await getTranslations("dashboard");
+
+  const [activeItems, allCategories, allSuppliers, allCustomers, warehouses] =
+    await Promise.all([
+      prisma.item.count({
+        where: { organizationId: session.organizationId, isActive: true },
+      }),
+      prisma.category.count({
+        where: { organizationId: session.organizationId, isActive: true },
+      }),
+      prisma.supplier.count({
+        where: { organizationId: session.organizationId, isActive: true },
+      }),
+      prisma.customer.count({
+        where: { organizationId: session.organizationId, isActive: true },
+      }),
+      prisma.warehouse.count({
+        where: { organizationId: session.organizationId, isActive: true },
+      }),
+    ]);
 
   return (
     <div className="space-y-6">
@@ -32,7 +52,7 @@ export default async function DashboardPage({ params }: PageProps) {
             <CardDescription>{t("metricItemsDescription")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-semibold">0</p>
+            <p className="text-3xl font-semibold">{activeItems}</p>
           </CardContent>
         </Card>
         <Card>
@@ -55,6 +75,13 @@ export default async function DashboardPage({ params }: PageProps) {
         </Card>
       </div>
 
+      <div className="grid gap-4 md:grid-cols-4">
+        <SummaryTile label={t("masterDataCategories")} value={allCategories} />
+        <SummaryTile label={t("masterDataSuppliers")} value={allSuppliers} />
+        <SummaryTile label={t("masterDataCustomers")} value={allCustomers} />
+        <SummaryTile label={t("masterDataWarehouses")} value={warehouses} />
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle>{t("nextStepsTitle")}</CardTitle>
@@ -68,6 +95,15 @@ export default async function DashboardPage({ params }: PageProps) {
           </ul>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function SummaryTile({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
+      <p className="text-xs uppercase tracking-wider text-slate-500">{label}</p>
+      <p className="mt-1 text-2xl font-semibold">{value}</p>
     </div>
   );
 }
