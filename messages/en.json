@@ -1,0 +1,35 @@
+{
+  "app": {
+    "name": "Warehousestok39",
+    "tagline": "Warehouse inbound & outbound tracking, multi-tenant."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "items": "Items",
+    "goodsReceipts": "Goods Receipt",
+    "goodsIssues": "Goods Issue",
+    "adjustments": "Adjustments",
+    "reports": "Reports",
+    "settings": "Settings"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signUp": "Sign up",
+    "signOut": "Sign out",
+    "email": "Email",
+    "password": "Password",
+    "name": "Name"
+  },
+  "landing": {
+    "headline": "Run your warehouse with less mess.",
+    "subhead": "Inbound & outbound tracking ready for many companies in one app.",
+    "ctaPrimary": "Get started",
+    "ctaSecondary": "See features",
+    "featureMultiTenantTitle": "Multi-tenant",
+    "featureMultiTenantBody": "Each company gets isolated data, its own document formats, and its own users.",
+    "featureBarcodeTitle": "Scan barcodes with a phone",
+    "featureBarcodeBody": "Capture transactions fast with a phone camera — no extra hardware required.",
+    "featureReportsTitle": "Reports & export",
+    "featureReportsBody": "Stock cards, movements, low-stock — export to Excel or PDF in one click."
+  }
+}

@@ -1,0 +1,102 @@
+// Prisma schema for warehousestok39
+// Multi-tenant SaaS warehouse inventory management.
+// Sprint 1: foundational tenancy models (Organization, User, Membership)
+// and document-numbering config. Domain tables (Item, GoodsReceipt, etc.)
+// land in subsequent sprints.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  OPERATOR
+  VIEWER
+}
+
+enum ResetPolicy {
+  never
+  yearly
+  monthly
+}
+
+enum DocType {
+  GOODS_RECEIPT
+  GOODS_ISSUE
+  STOCK_ADJUSTMENT
+  PURCHASE_ORDER
+  SALES_ORDER
+  INVOICE
+}
+
+model Organization {
+  id            String   @id @default(cuid())
+  // URL-safe slug, also used as ORG code in document numbering.
+  slug          String   @unique
+  name          String
+  address       String?
+  npwp          String?
+  logoUrl       String?
+  currency      String   @default("IDR")
+  timezone      String   @default("Asia/Jakarta")
+  defaultLocale String   @default("id")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  memberships     Membership[]
+  docNumberConfig DocNumberConfig[]
+
+  @@index([slug])
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  locale       String   @default("id")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships Membership[]
+
+  @@index([email])
+}
+
+model Membership {
+  id             String       @id @default(cuid())
+  userId         String
+  organizationId String
+  role           Role         @default(OPERATOR)
+  createdAt      DateTime     @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+}
+
+// One row per (organization, document type). Holds the template the tenant
+// configured plus the current counter and the period bucket the counter
+// belongs to (so we know when to reset it).
+model DocNumberConfig {
+  id             String      @id @default(cuid())
+  organizationId String
+  docType        DocType
+  template       String
+  resetPolicy    ResetPolicy @default(yearly)
+  currentCounter Int         @default(0)
+  counterPeriod  String      @default("all")
+  updatedAt      DateTime    @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, docType])
+}
