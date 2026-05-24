@@ -1,0 +1,18 @@
+# Local development overrides for docker-compose.yml.
+# `docker compose` auto-merges this file on top of the base.
+# In production, set COMPOSE_FILE=docker-compose.yml or rename this file
+# so port 5432 is not exposed on the host.
+
+services:
+  db:
+    ports:
+      - "5432:5432"
+
+  # In dev we usually run `npm run dev` on the host instead of building the app
+  # image — leave the `app` and `caddy` services from the base file disabled by
+  # setting the profile so they don't start unless explicitly requested with
+  # `docker compose --profile full up`.
+  app:
+    profiles: ["full"]
+  caddy:
+    profiles: ["full"]

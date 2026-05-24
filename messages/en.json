@@ -1,0 +1,64 @@
+{
+  "app": {
+    "name": "Warehousestok39",
+    "tagline": "Warehouse inbound & outbound tracking, multi-tenant."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "items": "Items",
+    "goodsReceipts": "Goods Receipt",
+    "goodsIssues": "Goods Issue",
+    "adjustments": "Adjustments",
+    "reports": "Reports",
+    "settings": "Settings",
+    "signOut": "Sign out"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signUp": "Sign up",
+    "signOut": "Sign out",
+    "email": "Email",
+    "password": "Password",
+    "name": "Full name",
+    "organizationName": "Company name",
+    "signInTitle": "Sign in",
+    "signInSubtitle": "Continue to your warehouse app.",
+    "signUpTitle": "Create your account",
+    "signUpSubtitle": "Free to start — we create the organization for your company automatically.",
+    "noAccountYet": "Don't have an account yet?",
+    "alreadyHaveAccount": "Already have an account?",
+    "signingIn": "Signing in...",
+    "creatingAccount": "Creating account...",
+    "createAccount": "Create account",
+    "invalidCredentials": "Email or password is incorrect.",
+    "emailTaken": "This email is already registered.",
+    "passwordHint": "At least 8 characters."
+  },
+  "dashboard": {
+    "welcome": "Hi, {name}",
+    "orgContext": "{org} — your role: {role}",
+    "metricItemsTitle": "Active items",
+    "metricItemsDescription": "Total SKUs in the warehouse",
+    "metricLowStockTitle": "Below minimum stock",
+    "metricLowStockDescription": "Items to reorder soon",
+    "metricTodayMovementsTitle": "Movements today",
+    "metricTodayMovementsDescription": "Inbound + outbound in the last 24h",
+    "nextStepsTitle": "Next steps",
+    "nextStepsDescription": "Modules coming up next.",
+    "nextStep1": "Master data: items, categories, units, suppliers, customers.",
+    "nextStep2": "Transactions: goods receipt, goods issue, stock adjustment.",
+    "nextStep3": "Reports: stock card, movements, low-stock + Excel/PDF export."
+  },
+  "landing": {
+    "headline": "Run your warehouse with less mess.",
+    "subhead": "Inbound & outbound tracking ready for many companies in one app.",
+    "ctaPrimary": "Get started",
+    "ctaSecondary": "See features",
+    "featureMultiTenantTitle": "Multi-tenant",
+    "featureMultiTenantBody": "Each company gets isolated data, its own document formats, and its own users.",
+    "featureBarcodeTitle": "Scan barcodes with a phone",
+    "featureBarcodeBody": "Capture transactions fast with a phone camera — no extra hardware required.",
+    "featureReportsTitle": "Reports & export",
+    "featureReportsBody": "Stock cards, movements, low-stock — export to Excel or PDF in one click."
+  }
+}
