@@ -10,15 +10,44 @@
     "goodsIssues": "Barang Keluar",
     "adjustments": "Penyesuaian",
     "reports": "Laporan",
-    "settings": "Pengaturan"
+    "settings": "Pengaturan",
+    "signOut": "Keluar"
   },
   "auth": {
     "signIn": "Masuk",
     "signUp": "Daftar",
     "signOut": "Keluar",
     "email": "Email",
-    "password": "Kata Sandi",
-    "name": "Nama"
+    "password": "Kata sandi",
+    "name": "Nama lengkap",
+    "organizationName": "Nama perusahaan",
+    "signInTitle": "Masuk ke akun",
+    "signInSubtitle": "Lanjutkan ke aplikasi gudang Anda.",
+    "signUpTitle": "Buat akun baru",
+    "signUpSubtitle": "Mulai gratis — kami otomatis bikin organisasi untuk perusahaan Anda.",
+    "noAccountYet": "Belum punya akun?",
+    "alreadyHaveAccount": "Sudah punya akun?",
+    "signingIn": "Memproses...",
+    "creatingAccount": "Membuat akun...",
+    "createAccount": "Buat akun",
+    "invalidCredentials": "Email atau kata sandi salah.",
+    "emailTaken": "Email ini sudah terdaftar.",
+    "passwordHint": "Minimal 8 karakter."
+  },
+  "dashboard": {
+    "welcome": "Halo, {name}",
+    "orgContext": "{org} — peran Anda: {role}",
+    "metricItemsTitle": "Jumlah barang",
+    "metricItemsDescription": "Total SKU aktif di gudang",
+    "metricLowStockTitle": "Di bawah stok minimum",
+    "metricLowStockDescription": "Barang yang perlu dipesan ulang",
+    "metricTodayMovementsTitle": "Mutasi hari ini",
+    "metricTodayMovementsDescription": "Transaksi masuk + keluar 24 jam terakhir",
+    "nextStepsTitle": "Langkah selanjutnya",
+    "nextStepsDescription": "Modul utama yang segera tersedia.",
+    "nextStep1": "Master data: barang, kategori, satuan, supplier, customer.",
+    "nextStep2": "Transaksi: barang masuk, barang keluar, penyesuaian stok.",
+    "nextStep3": "Laporan: kartu stok, mutasi, low-stock + export Excel/PDF."
   },
   "landing": {
     "headline": "Atur stok gudang lebih rapi.",

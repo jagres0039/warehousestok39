@@ -11,6 +11,7 @@ export default async function HomePage({ params }: PageProps) {
   setRequestLocale(locale);
   const t = await getTranslations("landing");
   const tApp = await getTranslations("app");
+  const tAuth = await getTranslations("auth");
 
   const features = [
     {
@@ -34,7 +35,10 @@ export default async function HomePage({ params }: PageProps) {
       <header className="container flex items-center justify-between py-6">
         <div className="text-xl font-semibold tracking-tight">{tApp("name")}</div>
         <nav className="flex items-center gap-4 text-sm">
-          <Link href={`/${otherLocale}`} className="text-slate-600 hover:text-slate-900">
+          <Link href={`/${locale}/login`} className="text-slate-700 hover:text-slate-900">
+            {tAuth("signIn")}
+          </Link>
+          <Link href={`/${otherLocale}`} className="text-slate-500 hover:text-slate-900">
             {otherLocale.toUpperCase()}
           </Link>
         </nav>
@@ -50,18 +54,18 @@ export default async function HomePage({ params }: PageProps) {
           </h1>
           <p className="mt-4 text-lg text-slate-600">{t("subhead")}</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <button
-              type="button"
+            <Link
+              href={`/${locale}/register`}
               className="rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90"
             >
               {t("ctaPrimary")}
-            </button>
-            <button
-              type="button"
+            </Link>
+            <Link
+              href={`/${locale}/login`}
               className="rounded-md border border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
               {t("ctaSecondary")}
-            </button>
+            </Link>
           </div>
         </div>
 

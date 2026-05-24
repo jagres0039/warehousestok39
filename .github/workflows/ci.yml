@@ -29,8 +29,8 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://warehouse:warehouse@localhost:5432/warehousestok39_ci?schema=public
-      NEXTAUTH_SECRET: ci-not-secret
-      NEXTAUTH_URL: http://localhost:3000
+      AUTH_SECRET: ci-not-secret
+      AUTH_TRUST_HOST: "true"
 
     steps:
       - uses: actions/checkout@v4
@@ -45,6 +45,9 @@ jobs:
 
       - name: Prisma generate
         run: npx prisma generate
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy
 
       - name: Lint
         run: npm run lint
