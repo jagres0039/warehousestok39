@@ -35,6 +35,26 @@ enum DocType {
   INVOICE
 }
 
+enum DocStatus {
+  POSTED
+  CANCELED
+}
+
+enum StockMoveType {
+  RECEIPT
+  ISSUE
+  ADJUSTMENT_IN
+  ADJUSTMENT_OUT
+  RECEIPT_REVERSAL
+  ISSUE_REVERSAL
+  ADJUSTMENT_REVERSAL
+}
+
+enum AdjustmentDirection {
+  IN
+  OUT
+}
+
 model Organization {
   id            String   @id @default(cuid())
   // URL-safe slug, also used as ORG code in document numbering.
@@ -57,6 +77,10 @@ model Organization {
   suppliers       Supplier[]
   customers       Customer[]
   warehouses      Warehouse[]
+  goodsReceipts   GoodsReceipt[]
+  goodsIssues     GoodsIssue[]
+  adjustments     StockAdjustment[]
+  ledgerEntries   StockLedger[]
 
   @@index([slug])
 }
@@ -164,9 +188,13 @@ model Item {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  category     Category?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  unit         Unit         @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  organization      Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  category          Category?             @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  unit              Unit                  @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  receiptLines      GoodsReceiptLine[]
+  issueLines        GoodsIssueLine[]
+  adjustmentLines   StockAdjustmentLine[]
+  ledgerEntries     StockLedger[]
 
   @@unique([organizationId, sku])
   @@unique([organizationId, barcode])
@@ -223,8 +251,162 @@ model Warehouse {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  goodsReceipts    GoodsReceipt[]
+  goodsIssues      GoodsIssue[]
+  adjustments      StockAdjustment[]
+  ledgerEntries    StockLedger[]
 
   @@unique([organizationId, code])
   @@index([organizationId, isActive])
+}
+
+// --- Transactions --------------------------------------------------------
+//
+// All transaction tables are tenant-scoped. Headers are append-only: once
+// POSTED they can be CANCELED (which writes reversal entries to StockLedger)
+// but never edited in place. Document numbers come from DocNumberConfig.
+
+model GoodsReceipt {
+  id             String    @id @default(cuid())
+  organizationId String
+  docNo          String
+  occurredAt     DateTime  @default(now())
+  warehouseId    String
+  supplierId     String?
+  note           String?
+  status         DocStatus @default(POSTED)
+  createdById    String
+  canceledAt     DateTime?
+  canceledById   String?
+  cancelReason   String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  warehouse    Warehouse           @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  lines        GoodsReceiptLine[]
+
+  @@unique([organizationId, docNo])
+  @@index([organizationId, occurredAt])
+  @@index([organizationId, status])
+}
+
+model GoodsReceiptLine {
+  id             String  @id @default(cuid())
+  receiptId      String
+  itemId         String
+  qty            Decimal @db.Decimal(18, 3)
+  note           String?
+
+  receipt GoodsReceipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  item    Item         @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  @@index([receiptId])
+  @@index([itemId])
+}
+
+model GoodsIssue {
+  id             String    @id @default(cuid())
+  organizationId String
+  docNo          String
+  occurredAt     DateTime  @default(now())
+  warehouseId    String
+  customerId     String?
+  note           String?
+  status         DocStatus @default(POSTED)
+  createdById    String
+  canceledAt     DateTime?
+  canceledById   String?
+  cancelReason   String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  warehouse    Warehouse        @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  lines        GoodsIssueLine[]
+
+  @@unique([organizationId, docNo])
+  @@index([organizationId, occurredAt])
+  @@index([organizationId, status])
+}
+
+model GoodsIssueLine {
+  id      String  @id @default(cuid())
+  issueId String
+  itemId  String
+  qty     Decimal @db.Decimal(18, 3)
+  note    String?
+
+  issue GoodsIssue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  item  Item       @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  @@index([issueId])
+  @@index([itemId])
+}
+
+model StockAdjustment {
+  id             String    @id @default(cuid())
+  organizationId String
+  docNo          String
+  occurredAt     DateTime  @default(now())
+  warehouseId    String
+  reason         String?
+  status         DocStatus @default(POSTED)
+  createdById    String
+  canceledAt     DateTime?
+  canceledById   String?
+  cancelReason   String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  warehouse    Warehouse             @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  lines        StockAdjustmentLine[]
+
+  @@unique([organizationId, docNo])
+  @@index([organizationId, occurredAt])
+  @@index([organizationId, status])
+}
+
+model StockAdjustmentLine {
+  id           String              @id @default(cuid())
+  adjustmentId String
+  itemId       String
+  direction    AdjustmentDirection
+  qty          Decimal             @db.Decimal(18, 3)
+  note         String?
+
+  adjustment StockAdjustment @relation(fields: [adjustmentId], references: [id], onDelete: Cascade)
+  item       Item            @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  @@index([adjustmentId])
+  @@index([itemId])
+}
+
+// Append-only stock movement log. On-hand stock for (item, warehouse) is
+// SUM(qtyDelta) across this table. Reversals are written as new rows so the
+// audit trail is preserved; no row in this table is ever updated or deleted.
+model StockLedger {
+  id             String        @id @default(cuid())
+  organizationId String
+  occurredAt     DateTime      @default(now())
+  itemId         String
+  warehouseId    String
+  // Signed delta in the item's unit. Positive = stock in, negative = stock out.
+  qtyDelta       Decimal       @db.Decimal(18, 3)
+  moveType       StockMoveType
+  refType        String
+  refId          String
+  note           String?
+  createdById    String
+  createdAt      DateTime      @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  item         Item         @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  warehouse    Warehouse    @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId, itemId, warehouseId])
+  @@index([organizationId, occurredAt])
+  @@index([refType, refId])
 }

@@ -40,14 +40,15 @@ export default async function AppLayout({ children, params }: LayoutProps) {
     {
       key: "transactions",
       items: [
-        { href: `/${locale}/goods-receipts`, key: "goodsReceipts", disabled: true },
-        { href: `/${locale}/goods-issues`, key: "goodsIssues", disabled: true },
-        { href: `/${locale}/adjustments`, key: "adjustments", disabled: true },
+        { href: `/${locale}/goods-receipts`, key: "goodsReceipts" },
+        { href: `/${locale}/goods-issues`, key: "goodsIssues" },
+        { href: `/${locale}/adjustments`, key: "adjustments" },
       ],
     },
     {
       key: "reports",
       items: [
+        { href: `/${locale}/stock`, key: "stock" },
         { href: `/${locale}/reports`, key: "reports", disabled: true },
         { href: `/${locale}/settings`, key: "settings", disabled: true },
       ],
@@ -146,6 +147,7 @@ type NavKey =
   | "goodsReceipts"
   | "goodsIssues"
   | "adjustments"
+  | "stock"
   | "reports"
   | "settings"
   | "masterData"
