@@ -104,14 +104,22 @@ export default async function ItemsListPage({ params, searchParams }: PageProps)
                     </Badge>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {canMutate(session.role) ? (
+                    <div className="flex items-center justify-end gap-3">
                       <Link
-                        href={`/${locale}/items/${i.id}/edit`}
+                        href={`/${locale}/items/${i.id}/card`}
                         className="text-sm font-medium text-primary hover:underline"
                       >
-                        {tCommon("edit")}
+                        {tCommon("stockCard")}
                       </Link>
-                    ) : null}
+                      {canMutate(session.role) ? (
+                        <Link
+                          href={`/${locale}/items/${i.id}/edit`}
+                          className="text-sm font-medium text-primary hover:underline"
+                        >
+                          {tCommon("edit")}
+                        </Link>
+                      ) : null}
+                    </div>
                   </td>
                 </tr>
               ))
