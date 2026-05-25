@@ -59,6 +59,14 @@ export default async function GoodsIssueDetailPage({ params }: PageProps) {
           </h1>
         </div>
         <div className="flex items-center gap-3">
+          <a
+            href={`/api/print/goods-issue/${issue.id}`}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium hover:bg-slate-50"
+          >
+            {tCommon("printPdf")}
+          </a>
           <Badge variant={issue.status === "POSTED" ? "success" : "muted"}>
             {issue.status === "POSTED" ? t("statusPosted") : t("statusCanceled")}
           </Badge>
