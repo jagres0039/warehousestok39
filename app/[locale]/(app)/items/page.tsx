@@ -111,6 +111,14 @@ export default async function ItemsListPage({ params, searchParams }: PageProps)
                       >
                         {tCommon("stockCard")}
                       </Link>
+                      <a
+                        href={`/api/print/item-label/${i.id}?locale=${locale}`}
+                        target="_blank"
+                        rel="noopener"
+                        className="text-sm font-medium text-primary hover:underline"
+                      >
+                        {tCommon("qrLabel")}
+                      </a>
                       {canMutate(session.role) ? (
                         <Link
                           href={`/${locale}/items/${i.id}/edit`}
