@@ -52,7 +52,7 @@ export default async function AppLayout({ children, params }: LayoutProps) {
         { href: `/${locale}/reports/movements`, key: "movements" },
         { href: `/${locale}/reports/low-stock`, key: "lowStock" },
         { href: `/${locale}/reports`, key: "reports" },
-        { href: `/${locale}/settings`, key: "settings", disabled: true },
+        { href: `/${locale}/settings`, key: "settings" },
       ],
     },
   ];

@@ -60,3 +60,16 @@ export function counterPeriodKey(policy: ResetPolicy, now: Date): string {
       return "all";
   }
 }
+
+/**
+ * Render a sample document number for the Settings UI preview. Pure function;
+ * safe to call from client components (no DB access).
+ */
+export function previewDocumentNumber(
+  template: string,
+  orgCode?: string,
+  sampleCounter = 1,
+  now: Date = new Date(),
+): string {
+  return renderDocumentNumber({ template, counter: sampleCounter, now, orgCode });
+}
