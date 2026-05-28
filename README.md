@@ -6,9 +6,10 @@ Multi-tenant SaaS warehouse inventory management for SMEs / UMKM.
 
 [![CI](https://github.com/jagres0039/warehousestok39/actions/workflows/ci.yml/badge.svg)](https://github.com/jagres0039/warehousestok39/actions/workflows/ci.yml)
 
-## Fitur (MVP)
+## Fitur
 
 - **Multi-tenant** dengan isolasi total per-organization, role-based access (OWNER / ADMIN / OPERATOR / VIEWER)
+- **User & role management**: undang rekan kerja lewat link undangan, ubah role, keluarkan anggota — dengan guard "OWNER terakhir tidak bisa dihapus / didemote"
 - **Master data**: Item, Kategori, Satuan, Supplier, Customer, Gudang — semua tenant-scoped, soft-deletable
 - **Transaksi**: Barang Masuk, Barang Keluar, Penyesuaian Stok — dengan validasi stok minus, cancel + reversal otomatis
 - **Stok ledger append-only** sebagai single source of truth (audit-friendly)
@@ -161,9 +162,10 @@ Lihat [`docs/SPEC.md`](docs/SPEC.md) untuk detail. High-level:
 4. **Sprint 4 — Transactions:** goods receipt, goods issue, stock adjustment, stock ledger. ✓
 5. **Sprint 5 — Reports & export:** stock list, stock card, mutation report, Excel/PDF export. ✓
 6. **Sprint 6 — Barcode & settings:** QR labels, document numbering UI, org profile, locale switcher. ✓
-7. **Sprint 7 — Polish & launch:** seed/demo data, user docs, production deploy. ✓ (you are here)
+7. **Sprint 7 — Polish & launch:** seed/demo data, user docs, production deploy. ✓
+8. **Sprint 8 — User & role management:** undang/ubah-role/keluarkan anggota via link undangan (mock email), public accept page, guard OWNER terakhir. ✓ (you are here)
 
-Fase 2 (di luar MVP): Purchase Order/Sales Order, Invoice, scan kamera HP, user/role management UI, multi-gudang transfer, dashboard grafik, audit log.
+Fase 2 (di luar MVP, sudah dimulai dari Sprint 8): Purchase Order/Sales Order, Invoice, scan kamera HP, multi-gudang transfer, dashboard grafik, audit log, email transport (Resend/SES) untuk undangan.
 
 ## License
 

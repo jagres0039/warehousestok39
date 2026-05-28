@@ -25,6 +25,10 @@ export default async function SettingsLandingPage({ params }: PageProps) {
       href: `/${locale}/settings/organization`,
     },
     {
+      key: "members",
+      href: `/${locale}/settings/members`,
+    },
+    {
       key: "docNumbering",
       href: `/${locale}/settings/document-numbering`,
     },
