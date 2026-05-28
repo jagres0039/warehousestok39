@@ -138,7 +138,21 @@ Sidebar → **Pengaturan**. Hanya OWNER & ADMIN yang bisa mengubah; OPERATOR/VIE
 ### 6.1 Profil Organisasi
 Edit nama perusahaan, alamat, NPWP, URL logo, mata uang (kode 2–8 huruf seperti `IDR`, `USD`), zona waktu, dan bahasa default. **Slug tenant tidak bisa diubah** karena dipakai di dalam kode dokumen dan referensi internal.
 
-### 6.2 Format Nomor Dokumen
+### 6.2 Anggota Tim (User & Role Management)
+Sidebar → **Pengaturan → Anggota Tim**. Hanya OWNER/ADMIN yang bisa mengubah.
+
+- **Undang anggota baru** — masukkan email + pilih role (ADMIN / OPERATOR / VIEWER). Klik **Kirim undangan**. Sistem membuat link undangan yang berlaku 7 hari. **Mode email belum aktif** — link akan ditampilkan langsung di kartu hijau dengan tombol **Salin link**. Bagikan link ini ke yang bersangkutan (chat / WhatsApp).
+- **Ubah peran** — di tabel anggota, pilih peran baru dari dropdown lalu klik **Simpan**. Anda tidak bisa mengubah peran sendiri (mencegah lock-out).
+- **Keluarkan anggota** — klik **Keluarkan** di baris yang sesuai → konfirmasi. Anda tidak bisa mengeluarkan diri sendiri, dan OWNER terakhir tidak bisa dihapus / didemote (mencegah org tanpa pemilik).
+- **Cabut undangan** — di kartu *Undangan menunggu*, klik **Cabut** untuk membatalkan link sebelum dipakai.
+
+Link undangan yang diklik mengarahkan ke halaman publik `/invitation/{token}`. Calon anggota memilih salah satu:
+- **Sudah punya akun** → masukkan kata sandi → langsung jadi anggota organisasi Anda.
+- **Akun baru** → masukkan nama + kata sandi → akun dibuat sekaligus menjadi anggota.
+
+> Catatan: kalau pengguna sudah punya organisasi lain, setelah accept ia mungkin perlu sign out + sign in lagi supaya organisasi yang baru aktif. Multi-org switcher menyusul di sprint berikutnya.
+
+### 6.3 Format Nomor Dokumen
 Untuk setiap jenis dokumen (Barang Masuk, Barang Keluar, Penyesuaian, PO, SO, Invoice), Anda bisa:
 
 - Edit **template** menggunakan placeholder berikut:
@@ -189,7 +203,7 @@ Cetak PDF tersebut ke label printer (atau A4 → potong) lalu tempel ke rak/box.
 4. **Master Data → Kategori** → kelompokkan barang.
 5. **Master Data → Gudang** → tambahkan lokasi fisik (kalau lebih dari 1).
 6. **Master Data → Barang** → input SKU. Kalau banyak, lakukan via Prisma Studio atau import (fase berikutnya).
-7. **Pengaturan → User Management** (fase berikutnya) → undang anggota tim.
+7. **Pengaturan → Anggota Tim** → undang anggota tim lewat link undangan (lihat 6.2).
 
 **Q: Stok minus terjadi — kenapa?**
 Tidak akan. Sistem menolak Barang Keluar / Adjustment OUT yang melebihi saldo gudang saat itu. Pesan error: `INSUFFICIENT_STOCK`.
@@ -200,6 +214,9 @@ Transaksi yang sudah POSTED tidak bisa di-edit. Lakukan **Batalkan** + buat tran
 **Q: Lupa password?**
 Reset via Postgres langsung (fase berikutnya akan ada UI reset password). Hubungi admin/maintainer database.
 
+**Q: Bagaimana cara menambah anggota tim?**
+Lihat **6.2 Anggota Tim**. OWNER/ADMIN bisa mengirim link undangan; email transport (Resend/SES) masih di-mock — link ditampilkan langsung di UI dan harus disebar manual (chat/WA) ke calon anggota.
+
 **Q: Bisa multi-bahasa di laporan?**
 Saat ini laporan PDF/Excel ikut locale yang aktif di URL (`/id/...` atau `/en/...`). Pengaturan **Bahasa default** di profil organisasi dipakai untuk user baru yang belum punya preferensi.
 
@@ -209,4 +226,6 @@ Saat ini laporan PDF/Excel ikut locale yang aktif di URL (`/id/...` atau `/en/..
 
 Sprint 1–7 = MVP (foundation → auth → master data → transaksi → laporan → barcode & settings → polish & launch).
 
-Fase 2 (di luar MVP) menyusul: Purchase Order/Sales Order, Invoice, multi-gudang transfer, scan kamera HP, user & role management UI, dashboard grafik, audit log. Lihat [`docs/SPEC.md`](SPEC.md) untuk detail.
+Sprint 8 = User & Role Management (undang/ubah-role/keluarkan anggota, public accept page, mock email).
+
+Fase 2 menyusul: Purchase Order/Sales Order, Invoice, multi-gudang transfer, scan kamera HP, dashboard grafik, audit log, email transport (Resend/SES) untuk undangan. Lihat [`docs/SPEC.md`](SPEC.md) untuk detail.
