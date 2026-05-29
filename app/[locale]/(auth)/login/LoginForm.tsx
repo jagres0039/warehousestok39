@@ -60,7 +60,7 @@ export function LoginForm({ locale }: LoginFormProps) {
           <Button type="submit" className="w-full" disabled={pending}>
             {pending ? t("signingIn") : t("signIn")}
           </Button>
-          <p className="text-center text-sm text-slate-500">
+          <p className="text-center text-sm text-muted-foreground">
             {t("noAccountYet")}{" "}
             <Link href={`/${locale}/register`} className="font-medium text-primary hover:underline">
               {t("signUp")}

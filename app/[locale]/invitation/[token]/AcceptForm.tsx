@@ -58,15 +58,15 @@ export function AcceptForm({
         <input type="hidden" name="locale" value={locale} />
         <input type="hidden" name="mode" value={mode} />
         <CardContent className="space-y-4">
-          <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm">
+          <div className="rounded-md border border-border bg-muted/40 p-3 text-sm">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-xs uppercase tracking-wider text-slate-500">{t("email")}</div>
+                <div className="text-xs uppercase tracking-wider text-muted-foreground">{t("email")}</div>
                 <div className="font-medium">{email}</div>
               </div>
               <Badge variant="success">{t(`role${role.charAt(0) + role.slice(1).toLowerCase()}`)}</Badge>
             </div>
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-xs text-muted-foreground">
               {t("expiresAt")}: {expiresAt}
             </p>
           </div>
@@ -98,7 +98,7 @@ export function AcceptForm({
               className={
                 mode === "existing"
                   ? "rounded-md bg-primary px-3 py-1 font-medium text-primary-foreground"
-                  : "rounded-md border border-slate-300 px-3 py-1 text-slate-700 hover:bg-slate-50"
+                  : "rounded-md border border-border px-3 py-1 text-foreground hover:bg-muted/40"
               }
             >
               {t("haveAccount")}
@@ -109,7 +109,7 @@ export function AcceptForm({
               className={
                 mode === "new"
                   ? "rounded-md bg-primary px-3 py-1 font-medium text-primary-foreground"
-                  : "rounded-md border border-slate-300 px-3 py-1 text-slate-700 hover:bg-slate-50"
+                  : "rounded-md border border-border px-3 py-1 text-foreground hover:bg-muted/40"
               }
             >
               {t("noAccount")}
@@ -139,7 +139,7 @@ export function AcceptForm({
             {fieldErr("password") ? (
               <p className="text-xs text-red-600">{fieldErr("password")}</p>
             ) : (
-              <p className="text-xs text-slate-500">{tAuth("passwordHint")}</p>
+              <p className="text-xs text-muted-foreground">{tAuth("passwordHint")}</p>
             )}
           </div>
 
@@ -147,7 +147,7 @@ export function AcceptForm({
             {t("acceptButton")}
           </SubmitButton>
 
-          <p className="text-center text-xs text-slate-500">
+          <p className="text-center text-xs text-muted-foreground">
             <Link href={`/${locale}/login`} className="hover:underline">
               {t("backToLogin")}
             </Link>

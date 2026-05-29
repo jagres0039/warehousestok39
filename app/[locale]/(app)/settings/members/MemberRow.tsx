@@ -48,9 +48,9 @@ export function MemberRow({
   const roleErrorKey = roleState?.error;
 
   return (
-    <tr className="hover:bg-slate-50">
+    <tr className="hover:bg-muted/40">
       <td className="px-4 py-3 text-sm font-medium">{name}</td>
-      <td className="px-4 py-3 text-sm text-slate-600">{email}</td>
+      <td className="px-4 py-3 text-sm text-muted-foreground">{email}</td>
       <td className="px-4 py-3">
         {isAdmin && !isSelf ? (
           <form action={roleAction} className="flex items-center gap-2">
@@ -60,7 +60,7 @@ export function MemberRow({
               name="role"
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
-              className="h-8 rounded-md border border-slate-300 bg-white px-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+              className="h-8 rounded-md border border-border bg-white px-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="OWNER">{t("roleOwner")}</option>
               <option value="ADMIN">{t("roleAdmin")}</option>
@@ -105,7 +105,7 @@ export function MemberRow({
                 <button
                   type="button"
                   onClick={() => setShowRemoveConfirm(false)}
-                  className="rounded-md border border-slate-300 px-2 py-0.5 text-xs hover:bg-slate-50"
+                  className="rounded-md border border-border px-2 py-0.5 text-xs hover:bg-muted/40"
                 >
                   {tCommon("cancel")}
                 </button>

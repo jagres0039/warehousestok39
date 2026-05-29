@@ -93,7 +93,7 @@ export function InviteForm({ locale }: InviteFormProps) {
                 id="role"
                 name="role"
                 defaultValue="OPERATOR"
-                className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                className="h-10 w-full rounded-md border border-border bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="ADMIN">{t("roleAdmin")}</option>
                 <option value="OPERATOR">{t("roleOperator")}</option>

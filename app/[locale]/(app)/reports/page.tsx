@@ -47,7 +47,7 @@ export default async function ReportsIndexPage({ params }: PageProps) {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-slate-600">{t(c.descKey)}</p>
+                <p className="text-sm text-muted-foreground">{t(c.descKey)}</p>
               </CardContent>
             </Card>
           </Link>

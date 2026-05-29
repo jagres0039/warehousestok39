@@ -38,7 +38,7 @@ export default async function OrganizationSettingsPage({ params }: PageProps) {
       <div>
         <Link
           href={`/${locale}/settings`}
-          className="text-sm text-slate-500 hover:underline"
+          className="text-sm text-muted-foreground hover:underline"
         >
           ← {tCommon("back")}
         </Link>

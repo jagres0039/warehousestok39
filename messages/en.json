@@ -21,7 +21,11 @@
     "settings": "Settings",
     "signOut": "Sign out",
     "masterData": "Master Data",
-    "transactions": "Transactions"
+    "transactions": "Transactions",
+    "openMenu": "Open navigation menu",
+    "collapseSidebar": "Collapse sidebar",
+    "expandSidebar": "Expand sidebar",
+    "themeToggle": "Toggle theme (light/dark/system)"
   },
   "common": {
     "save": "Save",
@@ -372,7 +376,12 @@
     "masterDataCategories": "Categories",
     "masterDataSuppliers": "Suppliers",
     "masterDataCustomers": "Customers",
-    "masterDataWarehouses": "Warehouses"
+    "masterDataWarehouses": "Warehouses",
+    "movementSummaryTitle": "Inbound vs outbound",
+    "movementSummaryDescription": "Movement entries in the last {days} days",
+    "inboundLabel": "Inbound entries",
+    "outboundLabel": "Outbound entries",
+    "teamSizeFooter": "{count} active member(s) in this organization."
   },
   "landing": {
     "headline": "Run your warehouse with less mess.",

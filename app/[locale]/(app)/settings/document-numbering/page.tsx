@@ -53,7 +53,7 @@ export default async function DocNumberingListPage({ params }: PageProps) {
       <div>
         <Link
           href={`/${locale}/settings`}
-          className="text-sm text-slate-500 hover:underline"
+          className="text-sm text-muted-foreground hover:underline"
         >
           ← {tCommon("back")}
         </Link>
@@ -63,9 +63,9 @@ export default async function DocNumberingListPage({ params }: PageProps) {
         description={t("docNumberingDescription")}
       />
 
-      <div className="rounded-md border border-slate-200 bg-white shadow-sm">
+      <div className="rounded-md border border-border bg-white shadow-sm">
         <table className="w-full">
-          <thead className="border-b border-slate-200 text-left text-xs uppercase tracking-wider text-slate-500">
+          <thead className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
             <tr>
               <th className="px-4 py-3">{t("docTypeColumn")}</th>
               <th className="px-4 py-3">{t("templateColumn")}</th>
@@ -74,7 +74,7 @@ export default async function DocNumberingListPage({ params }: PageProps) {
               <th className="px-4 py-3 text-right">{tCommon("actions")}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 text-sm">
+          <tbody className="divide-y divide-border text-sm">
             {DOC_TYPE_ORDER.map((dt) => {
               const cfg = byType.get(dt);
               const sample = cfg
@@ -85,15 +85,15 @@ export default async function DocNumberingListPage({ params }: PageProps) {
                   )
                 : "—";
               return (
-                <tr key={dt} className="hover:bg-slate-50">
+                <tr key={dt} className="hover:bg-muted/40">
                   <td className="px-4 py-3 font-medium">
                     {t(`docType_${dt}` as const)}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs">
                     {cfg?.template ?? "—"}
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs text-slate-700">{sample}</td>
-                  <td className="px-4 py-3 text-slate-700">
+                  <td className="px-4 py-3 font-mono text-xs text-foreground">{sample}</td>
+                  <td className="px-4 py-3 text-foreground">
                     {cfg
                       ? t(`resetPolicy_${cfg.resetPolicy as ResetPolicy}` as const)
                       : "—"}

@@ -1,8 +1,13 @@
 import Link from "next/link";
 import { ReactNode } from "react";
 import { setRequestLocale, getTranslations } from "next-intl/server";
+import { Boxes } from "lucide-react";
 import { requireTenantSession } from "@/lib/session";
 import { signOutAction } from "./actions";
+import { SidebarNav, MobileNav } from "@/components/app/sidebar-nav";
+import { UserMenu } from "@/components/app/user-menu";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { Badge, roleBadgeVariant } from "@/components/ui/badge";
 
 // All protected routes need a live session, so opt out of static generation.
 export const dynamic = "force-dynamic";
@@ -10,6 +15,12 @@ export const dynamic = "force-dynamic";
 interface LayoutProps {
   children: ReactNode;
   params: Promise<{ locale: string }>;
+}
+
+interface NavSectionDef {
+  key: string;
+  labelKey?: string;
+  items: { href: string; key: string; disabled?: boolean }[];
 }
 
 export default async function AppLayout({ children, params }: LayoutProps) {
@@ -21,13 +32,14 @@ export default async function AppLayout({ children, params }: LayoutProps) {
   const signOutBound = signOutAction.bind(null, locale);
   const otherLocale = locale === "id" ? "en" : "id";
 
-  const navSections: NavSection[] = [
+  const navDef: NavSectionDef[] = [
     {
       key: "dashboard",
       items: [{ href: `/${locale}/dashboard`, key: "dashboard" }],
     },
     {
       key: "masterData",
+      labelKey: "masterData",
       items: [
         { href: `/${locale}/items`, key: "items" },
         { href: `/${locale}/categories`, key: "categories" },
@@ -39,6 +51,7 @@ export default async function AppLayout({ children, params }: LayoutProps) {
     },
     {
       key: "transactions",
+      labelKey: "transactions",
       items: [
         { href: `/${locale}/goods-receipts`, key: "goodsReceipts" },
         { href: `/${locale}/goods-issues`, key: "goodsIssues" },
@@ -47,6 +60,7 @@ export default async function AppLayout({ children, params }: LayoutProps) {
     },
     {
       key: "reports",
+      labelKey: "reports",
       items: [
         { href: `/${locale}/stock`, key: "stock" },
         { href: `/${locale}/reports/movements`, key: "movements" },
@@ -57,102 +71,76 @@ export default async function AppLayout({ children, params }: LayoutProps) {
     },
   ];
 
+  const sections = navDef.map((section) => ({
+    key: section.key,
+    label: section.labelKey ? t(section.labelKey) : undefined,
+    items: section.items.map((it) => ({
+      href: it.href,
+      key: it.key,
+      label: t(it.key),
+      disabled: it.disabled,
+    })),
+  }));
+
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="container flex h-14 items-center justify-between">
-          <Link
-            href={`/${locale}/dashboard`}
-            className="text-base font-semibold tracking-tight"
-          >
-            Warehousestok39
-          </Link>
-          <div className="flex items-center gap-3 text-sm">
-            <span className="hidden text-slate-500 md:inline">
-              {session.organizationName} · {session.role}
-            </span>
+    <div className="flex min-h-screen flex-col bg-background">
+      <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+        <div className="flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-2">
+            <MobileNav sections={sections} triggerLabel={t("openMenu")} />
+            <Link
+              href={`/${locale}/dashboard`}
+              className="flex items-center gap-2 text-base font-semibold tracking-tight"
+            >
+              <span
+                className="grid size-8 place-items-center rounded-md bg-primary text-primary-foreground shadow-soft"
+                aria-hidden
+              >
+                <Boxes className="size-4" />
+              </span>
+              <span className="hidden sm:inline">Warehousestok39</span>
+            </Link>
+          </div>
+          <div className="ml-auto flex items-center gap-2 sm:gap-3">
+            <div className="hidden items-center gap-2 rounded-full border border-border bg-background py-1 pl-3 pr-1 text-xs sm:flex">
+              <span className="font-medium text-foreground">
+                {session.organizationName}
+              </span>
+              <Badge variant={roleBadgeVariant(session.role)}>{session.role}</Badge>
+            </div>
             <Link
               href={`/${otherLocale}/dashboard`}
-              className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-500 hover:text-slate-900"
+              className="inline-flex h-9 items-center rounded-md border border-border bg-background px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              aria-label={`Switch to ${otherLocale.toUpperCase()}`}
             >
               {otherLocale.toUpperCase()}
             </Link>
-            <form action={signOutBound}>
-              <button
-                type="submit"
-                className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
-              >
-                {t("signOut")}
-              </button>
-            </form>
+            <ThemeToggle label={t("themeToggle")} />
+            <UserMenu
+              name={session.name || session.email}
+              email={session.email}
+              role={session.role}
+              settingsHref={`/${locale}/settings`}
+              settingsLabel={t("settings")}
+              signOutLabel={t("signOut")}
+              signOutAction={signOutBound}
+            />
           </div>
         </div>
       </header>
 
-      <div className="container grid gap-6 py-6 md:grid-cols-[220px,1fr]">
-        <aside className="hidden md:block">
-          <nav className="space-y-6">
-            {navSections.map((section) => (
-              <div key={section.key}>
-                {section.key !== "dashboard" ? (
-                  <h4 className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    {t(section.key)}
-                  </h4>
-                ) : null}
-                <ul className="space-y-1">
-                  {section.items.map((item) => (
-                    <li key={item.key}>
-                      {item.disabled ? (
-                        <span className="block cursor-not-allowed rounded-md px-3 py-1.5 text-sm text-slate-400">
-                          {t(item.key)}
-                        </span>
-                      ) : (
-                        <Link
-                          href={item.href}
-                          className="block rounded-md px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900"
-                        >
-                          {t(item.key)}
-                        </Link>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </nav>
-        </aside>
-        <main className="min-w-0">{children}</main>
+      <div className="flex flex-1">
+        <SidebarNav
+          sections={sections}
+          collapseLabels={{
+            collapse: t("collapseSidebar"),
+            expand: t("expandSidebar"),
+          }}
+        />
+        <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mx-auto w-full max-w-6xl">{children}</div>
+        </main>
       </div>
     </div>
   );
 }
-
-interface NavItem {
-  href: string;
-  key: NavKey;
-  disabled?: boolean;
-}
-
-interface NavSection {
-  key: NavKey;
-  items: NavItem[];
-}
-
-type NavKey =
-  | "dashboard"
-  | "items"
-  | "categories"
-  | "units"
-  | "suppliers"
-  | "customers"
-  | "warehouses"
-  | "goodsReceipts"
-  | "goodsIssues"
-  | "adjustments"
-  | "stock"
-  | "movements"
-  | "lowStock"
-  | "reports"
-  | "settings"
-  | "masterData"
-  | "transactions";

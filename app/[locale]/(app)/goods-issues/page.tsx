@@ -79,9 +79,9 @@ export default async function GoodsIssuesPage({ params, searchParams }: PageProp
 
       <SearchInput placeholder={t("issueSearchPlaceholder")} />
 
-      <div className="rounded-md border border-slate-200 bg-white shadow-sm">
+      <div className="rounded-md border border-border bg-white shadow-sm">
         <table className="w-full">
-          <thead className="border-b border-slate-200 text-left text-xs uppercase tracking-wider text-slate-500">
+          <thead className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
             <tr>
               <th className="px-4 py-3">{t("docNo")}</th>
               <th className="px-4 py-3">{t("occurredAt")}</th>
@@ -92,22 +92,22 @@ export default async function GoodsIssuesPage({ params, searchParams }: PageProp
               <th className="px-4 py-3 text-right">{tCommon("actions")}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 text-sm">
+          <tbody className="divide-y divide-border text-sm">
             {result.rows.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-slate-500">
+                <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
                   {tCommon("noResults")}
                 </td>
               </tr>
             ) : (
               result.rows.map((r) => (
-                <tr key={r.id} className="hover:bg-slate-50">
+                <tr key={r.id} className="hover:bg-muted/40">
                   <td className="px-4 py-3 font-mono text-xs">{r.docNo}</td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-3 text-muted-foreground">
                     {r.occurredAt.toISOString().slice(0, 16).replace("T", " ")}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{r.warehouse.code}</td>
-                  <td className="px-4 py-3 text-slate-600">
+                  <td className="px-4 py-3 text-muted-foreground">{r.warehouse.code}</td>
+                  <td className="px-4 py-3 text-muted-foreground">
                     {r.customerId ? customerName.get(r.customerId) ?? "-" : "-"}
                   </td>
                   <td className="px-4 py-3 text-right font-mono">{r._count.lines}</td>

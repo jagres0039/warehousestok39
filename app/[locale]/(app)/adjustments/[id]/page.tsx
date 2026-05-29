@@ -43,7 +43,7 @@ export default async function StockAdjustmentDetailPage({ params }: PageProps) {
         <div>
           <Link
             href={`/${locale}/adjustments`}
-            className="text-xs text-slate-500 hover:underline"
+            className="text-xs text-muted-foreground hover:underline"
           >
             ← {t("adjustmentsTitle")}
           </Link>
@@ -56,7 +56,7 @@ export default async function StockAdjustmentDetailPage({ params }: PageProps) {
             href={`/api/print/adjustment/${adjustment.id}`}
             target="_blank"
             rel="noreferrer"
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium hover:bg-slate-50"
+            className="rounded-md border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted/40"
           >
             {tCommon("printPdf")}
           </a>
@@ -103,7 +103,7 @@ export default async function StockAdjustmentDetailPage({ params }: PageProps) {
         </CardHeader>
         <CardContent className="p-0">
           <table className="w-full text-sm">
-            <thead className="border-b border-slate-200 bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500">
+            <thead className="border-b border-border bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="px-4 py-2">{t("item")}</th>
                 <th className="px-4 py-2">{t("direction")}</th>
@@ -111,11 +111,11 @@ export default async function StockAdjustmentDetailPage({ params }: PageProps) {
                 <th className="px-4 py-2">{t("lineNote")}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-border">
               {adjustment.lines.map((l) => (
                 <tr key={l.id}>
                   <td className="px-4 py-2">
-                    <div className="font-mono text-xs text-slate-500">{l.item.sku}</div>
+                    <div className="font-mono text-xs text-muted-foreground">{l.item.sku}</div>
                     <div>{l.item.name}</div>
                   </td>
                   <td className="px-4 py-2">
@@ -126,7 +126,7 @@ export default async function StockAdjustmentDetailPage({ params }: PageProps) {
                   <td className="px-4 py-2 text-right font-mono">
                     {Number(l.qty).toLocaleString(locale)} {l.item.unit.code}
                   </td>
-                  <td className="px-4 py-2 text-slate-600">{l.note ?? "—"}</td>
+                  <td className="px-4 py-2 text-muted-foreground">{l.note ?? "—"}</td>
                 </tr>
               ))}
             </tbody>
@@ -134,7 +134,7 @@ export default async function StockAdjustmentDetailPage({ params }: PageProps) {
         </CardContent>
       </Card>
 
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-muted-foreground">
         {tCommon("createdAt")}: {adjustment.createdAt.toISOString().replace("T", " ").slice(0, 16)}
       </p>
     </div>
@@ -144,7 +144,7 @@ export default async function StockAdjustmentDetailPage({ params }: PageProps) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <dt className="text-xs uppercase tracking-wider text-slate-500">{label}</dt>
+      <dt className="text-xs uppercase tracking-wider text-muted-foreground">{label}</dt>
       <dd className="mt-1">{children}</dd>
     </div>
   );

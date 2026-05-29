@@ -28,7 +28,7 @@ export default async function InvitationPage({ params }: PageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-muted/40">
       <div className="container flex min-h-screen items-center justify-center py-12">
         <div className="w-full max-w-md">
           <div className="mb-6 text-center">

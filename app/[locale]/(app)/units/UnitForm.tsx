@@ -95,7 +95,7 @@ export function FormField({ id, label, defaultValue, hint, error, required, type
       {error ? (
         <p className="text-xs text-red-600">{error}</p>
       ) : hint ? (
-        <p className="text-xs text-slate-500">{hint}</p>
+        <p className="text-xs text-muted-foreground">{hint}</p>
       ) : null}
     </div>
   );
@@ -109,13 +109,13 @@ interface CheckboxFieldProps {
 
 export function CheckboxField({ id, label, defaultChecked }: CheckboxFieldProps) {
   return (
-    <label className="flex items-center gap-2 text-sm text-slate-700">
+    <label className="flex items-center gap-2 text-sm text-foreground">
       <input
         type="checkbox"
         id={id}
         name={id}
         defaultChecked={defaultChecked ?? true}
-        className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+        className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
       />
       <span>{label}</span>
     </label>

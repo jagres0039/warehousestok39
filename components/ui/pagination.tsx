@@ -35,8 +35,8 @@ export function Pagination({ basePath, searchParams, page, totalPages, labels }:
   const nextDisabled = page >= totalPages;
 
   return (
-    <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3">
-      <p className="text-sm text-slate-600">
+    <div className="flex items-center justify-between border-t border-border px-4 py-3">
+      <p className="text-sm text-muted-foreground">
         {labels.pageOf.replace("{page}", String(page)).replace("{total}", String(totalPages))}
       </p>
       <div className="flex items-center gap-2">
@@ -65,10 +65,10 @@ interface LinkProps {
 
 function PaginationLink({ href, disabled, children }: LinkProps) {
   const className = cn(
-    "rounded-md border border-slate-300 px-3 py-1.5 text-sm",
+    "inline-flex h-8 items-center rounded-md border border-border bg-background px-3 text-sm transition-colors",
     disabled
-      ? "pointer-events-none cursor-not-allowed text-slate-400"
-      : "text-slate-700 hover:bg-slate-50",
+      ? "pointer-events-none cursor-not-allowed text-muted-foreground/50"
+      : "text-foreground hover:bg-muted",
   );
   if (disabled) {
     return <span className={className}>{children}</span>;

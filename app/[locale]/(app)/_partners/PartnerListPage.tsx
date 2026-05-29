@@ -61,9 +61,9 @@ export async function PartnerListPage({
 
       <SearchInput placeholder={t(searchKey)} />
 
-      <div className="rounded-md border border-slate-200 bg-white shadow-sm">
+      <div className="rounded-md border border-border bg-white shadow-sm">
         <table className="w-full">
-          <thead className="border-b border-slate-200 text-left text-xs uppercase tracking-wider text-slate-500">
+          <thead className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
             <tr>
               <th className="px-4 py-3">{t("code")}</th>
               <th className="px-4 py-3">{t("name")}</th>
@@ -73,20 +73,20 @@ export async function PartnerListPage({
               <th className="px-4 py-3 text-right">{tCommon("actions")}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 text-sm">
+          <tbody className="divide-y divide-border text-sm">
             {result.rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-12 text-center text-slate-500">
+                <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
                   {tCommon("noResults")}
                 </td>
               </tr>
             ) : (
               result.rows.map((p) => (
-                <tr key={p.id} className="hover:bg-slate-50">
+                <tr key={p.id} className="hover:bg-muted/40">
                   <td className="px-4 py-3 font-mono text-xs uppercase">{p.code}</td>
                   <td className="px-4 py-3 font-medium">{p.name}</td>
-                  <td className="px-4 py-3 text-slate-600">{p.contactName ?? "-"}</td>
-                  <td className="px-4 py-3 text-slate-600">{p.phone ?? "-"}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{p.contactName ?? "-"}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{p.phone ?? "-"}</td>
                   <td className="px-4 py-3">
                     <Badge variant={p.isActive ? "success" : "muted"}>
                       {p.isActive ? tCommon("active") : tCommon("inactive")}

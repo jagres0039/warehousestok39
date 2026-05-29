@@ -113,7 +113,7 @@ export function GoodsReceiptForm({
                 id="warehouseId"
                 name="warehouseId"
                 defaultValue={defaultWarehouseId ?? warehouses[0]?.id ?? ""}
-                className="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
+                className="h-9 w-full rounded-md border border-border bg-white px-3 text-sm"
                 required
               >
                 {warehouses.map((w) => (
@@ -129,7 +129,7 @@ export function GoodsReceiptForm({
                 id="supplierId"
                 name="supplierId"
                 defaultValue=""
-                className="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
+                className="h-9 w-full rounded-md border border-border bg-white px-3 text-sm"
               >
                 <option value="">{tMaster("categoryNone")}</option>
                 {suppliers.map((s) => (
@@ -165,14 +165,14 @@ export function GoodsReceiptForm({
               <button
                 type="button"
                 onClick={addLine}
-                className="rounded-md border border-slate-300 px-3 py-1 text-sm hover:bg-slate-50"
+                className="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted/40"
               >
                 + {t("addLine")}
               </button>
             </div>
-            <div className="overflow-hidden rounded-md border border-slate-200">
+            <div className="overflow-hidden rounded-md border border-border">
               <table className="w-full text-sm">
-                <thead className="bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500">
+                <thead className="bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="px-3 py-2">{t("item")}</th>
                     <th className="w-32 px-3 py-2">{t("qty")}</th>
@@ -180,14 +180,14 @@ export function GoodsReceiptForm({
                     <th className="w-10 px-3 py-2" />
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-border">
                   {lines.map((l) => (
                     <tr key={l.uid}>
                       <td className="px-3 py-2">
                         <select
                           value={l.itemId}
                           onChange={(e) => updateLine(l.uid, { itemId: e.target.value })}
-                          className="h-9 w-full rounded-md border border-slate-300 bg-white px-2 text-sm"
+                          className="h-9 w-full rounded-md border border-border bg-white px-2 text-sm"
                           required
                         >
                           {items.length === 0 ? (
@@ -305,7 +305,7 @@ export function GoodsIssueForm({
                 id="warehouseId"
                 name="warehouseId"
                 defaultValue={defaultWarehouseId ?? warehouses[0]?.id ?? ""}
-                className="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
+                className="h-9 w-full rounded-md border border-border bg-white px-3 text-sm"
                 required
               >
                 {warehouses.map((w) => (
@@ -321,7 +321,7 @@ export function GoodsIssueForm({
                 id="customerId"
                 name="customerId"
                 defaultValue=""
-                className="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
+                className="h-9 w-full rounded-md border border-border bg-white px-3 text-sm"
               >
                 <option value="">{tMaster("categoryNone")}</option>
                 {customers.map((c) => (
@@ -357,14 +357,14 @@ export function GoodsIssueForm({
               <button
                 type="button"
                 onClick={addLine}
-                className="rounded-md border border-slate-300 px-3 py-1 text-sm hover:bg-slate-50"
+                className="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted/40"
               >
                 + {t("addLine")}
               </button>
             </div>
-            <div className="overflow-hidden rounded-md border border-slate-200">
+            <div className="overflow-hidden rounded-md border border-border">
               <table className="w-full text-sm">
-                <thead className="bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500">
+                <thead className="bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="px-3 py-2">{t("item")}</th>
                     <th className="w-32 px-3 py-2">{t("qty")}</th>
@@ -372,14 +372,14 @@ export function GoodsIssueForm({
                     <th className="w-10 px-3 py-2" />
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-border">
                   {lines.map((l) => (
                     <tr key={l.uid}>
                       <td className="px-3 py-2">
                         <select
                           value={l.itemId}
                           onChange={(e) => updateLine(l.uid, { itemId: e.target.value })}
-                          className="h-9 w-full rounded-md border border-slate-300 bg-white px-2 text-sm"
+                          className="h-9 w-full rounded-md border border-border bg-white px-2 text-sm"
                           required
                         >
                           {items.length === 0 ? (
@@ -518,7 +518,7 @@ export function StockAdjustmentForm({
                 id="warehouseId"
                 name="warehouseId"
                 defaultValue={defaultWarehouseId ?? warehouses[0]?.id ?? ""}
-                className="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
+                className="h-9 w-full rounded-md border border-border bg-white px-3 text-sm"
                 required
               >
                 {warehouses.map((w) => (
@@ -551,14 +551,14 @@ export function StockAdjustmentForm({
               <button
                 type="button"
                 onClick={addLine}
-                className="rounded-md border border-slate-300 px-3 py-1 text-sm hover:bg-slate-50"
+                className="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted/40"
               >
                 + {t("addLine")}
               </button>
             </div>
-            <div className="overflow-hidden rounded-md border border-slate-200">
+            <div className="overflow-hidden rounded-md border border-border">
               <table className="w-full text-sm">
-                <thead className="bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500">
+                <thead className="bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="px-3 py-2">{t("item")}</th>
                     <th className="w-32 px-3 py-2">{t("direction")}</th>
@@ -567,14 +567,14 @@ export function StockAdjustmentForm({
                     <th className="w-10 px-3 py-2" />
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-border">
                   {lines.map((l) => (
                     <tr key={l.uid}>
                       <td className="px-3 py-2">
                         <select
                           value={l.itemId}
                           onChange={(e) => updateLine(l.uid, { itemId: e.target.value })}
-                          className="h-9 w-full rounded-md border border-slate-300 bg-white px-2 text-sm"
+                          className="h-9 w-full rounded-md border border-border bg-white px-2 text-sm"
                           required
                         >
                           {items.length === 0 ? (
@@ -596,7 +596,7 @@ export function StockAdjustmentForm({
                               direction: e.target.value as "IN" | "OUT",
                             })
                           }
-                          className="h-9 w-full rounded-md border border-slate-300 bg-white px-2 text-sm"
+                          className="h-9 w-full rounded-md border border-border bg-white px-2 text-sm"
                         >
                           <option value="IN">{t("directionIn")}</option>
                           <option value="OUT">{t("directionOut")}</option>

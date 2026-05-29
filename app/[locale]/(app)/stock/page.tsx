@@ -78,12 +78,12 @@ export default async function StockPage({ params, searchParams }: PageProps) {
           name="q"
           defaultValue={sp.q ?? ""}
           placeholder={t("searchPlaceholder")}
-          className="h-9 w-64 rounded-md border border-slate-300 px-3 text-sm"
+          className="h-9 w-64 rounded-md border border-border px-3 text-sm"
         />
         <select
           name="warehouseId"
           defaultValue={selectedWarehouseId}
-          className="h-9 rounded-md border border-slate-300 bg-white px-3 text-sm"
+          className="h-9 rounded-md border border-border bg-white px-3 text-sm"
         >
           <option value="">{t("allWarehouses")}</option>
           {warehouses.map((w) => (
@@ -94,16 +94,16 @@ export default async function StockPage({ params, searchParams }: PageProps) {
         </select>
         <button
           type="submit"
-          className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800"
+          className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
         >
           {tCommon("search")}
         </button>
       </form>
 
-      <div className="rounded-md border border-slate-200 bg-white shadow-sm">
+      <div className="rounded-md border border-border bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="border-b border-slate-200 text-left text-xs uppercase tracking-wider text-slate-500">
+            <thead className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="sticky left-0 bg-white px-4 py-3">{t("item")}</th>
                 <th className="px-4 py-3 text-right">{t("minStock")}</th>
@@ -115,12 +115,12 @@ export default async function StockPage({ params, searchParams }: PageProps) {
                 <th className="px-4 py-3 text-right">{t("total")}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-border">
               {filtered.length === 0 ? (
                 <tr>
                   <td
                     colSpan={visibleWarehouses.length + 3}
-                    className="px-4 py-12 text-center text-slate-500"
+                    className="px-4 py-12 text-center text-muted-foreground"
                   >
                     {tCommon("noResults")}
                   </td>
@@ -134,18 +134,18 @@ export default async function StockPage({ params, searchParams }: PageProps) {
                   const total = totals.reduce((a, b) => a + b, 0);
                   const lowStock = total < min;
                   return (
-                    <tr key={item.id} className="hover:bg-slate-50">
+                    <tr key={item.id} className="hover:bg-muted/40">
                       <td className="sticky left-0 bg-white px-4 py-3">
-                        <div className="font-mono text-xs text-slate-500">{item.sku}</div>
+                        <div className="font-mono text-xs text-muted-foreground">{item.sku}</div>
                         <Link
                           href={`/${locale}/items/${item.id}/edit`}
-                          className="font-medium text-slate-900 hover:underline"
+                          className="font-medium text-foreground hover:underline"
                         >
                           {item.name}
                         </Link>{" "}
-                        <span className="text-xs text-slate-500">({item.unit.code})</span>
+                        <span className="text-xs text-muted-foreground">({item.unit.code})</span>
                       </td>
-                      <td className="px-4 py-3 text-right font-mono text-slate-500">
+                      <td className="px-4 py-3 text-right font-mono text-muted-foreground">
                         {min.toLocaleString(locale)}
                       </td>
                       {visibleWarehouses.map((w, idx) => (

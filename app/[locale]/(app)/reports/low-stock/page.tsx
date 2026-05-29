@@ -42,11 +42,11 @@ export default async function LowStockReportPage({ params, searchParams }: PageP
 
       <form className="flex flex-wrap items-end gap-3" action="" method="GET">
         <div className="space-y-1">
-          <label className="block text-xs text-slate-600">{tTx("warehouse")}</label>
+          <label className="block text-xs text-muted-foreground">{tTx("warehouse")}</label>
           <select
             name="warehouseId"
             defaultValue={warehouseId ?? ""}
-            className="h-9 rounded-md border border-slate-300 bg-white px-3 text-sm"
+            className="h-9 rounded-md border border-border bg-white px-3 text-sm"
           >
             <option value="">{t("allWarehouses")}</option>
             {warehouses.map((w) => (
@@ -58,21 +58,21 @@ export default async function LowStockReportPage({ params, searchParams }: PageP
         </div>
         <button
           type="submit"
-          className="h-9 rounded-md bg-slate-900 px-3 text-sm font-medium text-white hover:bg-slate-800"
+          className="h-9 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
         >
           {tCommon("apply")}
         </button>
         <a
           href={exportHref}
-          className="h-9 rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium hover:bg-slate-50"
+          className="h-9 rounded-md border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted/40"
         >
           {t("exportExcel")}
         </a>
       </form>
 
-      <div className="rounded-md border border-slate-200 bg-white shadow-sm">
+      <div className="rounded-md border border-border bg-white shadow-sm">
         <table className="w-full text-sm">
-          <thead className="border-b border-slate-200 text-left text-xs uppercase tracking-wider text-slate-500">
+          <thead className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
             <tr>
               <th className="px-4 py-2">{tTx("item")}</th>
               <th className="px-4 py-2 text-right">{t("minStock")}</th>
@@ -81,21 +81,21 @@ export default async function LowStockReportPage({ params, searchParams }: PageP
               <th className="px-4 py-2 text-right">{tCommon("actions")}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-border">
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-12 text-center text-slate-500">
+                <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground">
                   {t("noLowStock")}
                 </td>
               </tr>
             ) : (
               rows.map((r) => (
-                <tr key={r.itemId} className="hover:bg-slate-50">
+                <tr key={r.itemId} className="hover:bg-muted/40">
                   <td className="px-4 py-2">
-                    <div className="font-mono text-xs text-slate-500">{r.sku}</div>
+                    <div className="font-mono text-xs text-muted-foreground">{r.sku}</div>
                     <div>{r.name}</div>
                   </td>
-                  <td className="px-4 py-2 text-right font-mono text-slate-500">
+                  <td className="px-4 py-2 text-right font-mono text-muted-foreground">
                     {r.minStock.toLocaleString(locale)} {r.unitCode}
                   </td>
                   <td className="px-4 py-2 text-right font-mono">
