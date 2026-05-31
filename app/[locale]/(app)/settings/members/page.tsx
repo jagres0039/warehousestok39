@@ -35,7 +35,7 @@ export default async function MembersPage({ params }: PageProps) {
       <div>
         <Link
           href={`/${locale}/settings`}
-          className="text-sm text-slate-500 hover:underline"
+          className="text-sm text-muted-foreground hover:underline"
         >
           &larr; {tCommon("back")}
         </Link>
@@ -52,9 +52,9 @@ export default async function MembersPage({ params }: PageProps) {
       ) : null}
 
       {/* Members table */}
-      <div className="rounded-md border border-slate-200 bg-white shadow-sm">
+      <div className="rounded-md border border-border bg-white shadow-sm">
         <table className="w-full">
-          <thead className="border-b border-slate-200 text-left text-xs uppercase tracking-wider text-slate-500">
+          <thead className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
             <tr>
               <th className="px-4 py-3">{t("colName")}</th>
               <th className="px-4 py-3">{t("colEmail")}</th>
@@ -62,7 +62,7 @@ export default async function MembersPage({ params }: PageProps) {
               <th className="px-4 py-3 text-right">{tCommon("actions")}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 text-sm">
+          <tbody className="divide-y divide-border text-sm">
             {members.map((m) => (
               <MemberRow
                 key={m.membershipId}
@@ -86,7 +86,7 @@ export default async function MembersPage({ params }: PageProps) {
             <CardTitle>{t("pendingInvitations")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-border">
               {invitations.map((inv) => {
                 const expired = inv.expiresAt.getTime() < Date.now();
                 return (
@@ -98,12 +98,12 @@ export default async function MembersPage({ params }: PageProps) {
                     {expired ? (
                       <span className="text-xs text-red-500">{t("expired")}</span>
                     ) : (
-                      <span className="text-xs text-slate-400">
+                      <span className="text-xs text-muted-foreground">
                         {t("expiresAt")}: {inv.expiresAt.toLocaleDateString()}
                       </span>
                     )}
                     {inv.invitedByName ? (
-                      <span className="text-xs text-slate-400">
+                      <span className="text-xs text-muted-foreground">
                         {t("invitedBy")}: {inv.invitedByName}
                       </span>
                     ) : null}

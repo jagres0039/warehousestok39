@@ -75,7 +75,7 @@ export function RegisterForm({ locale }: RegisterFormProps) {
           <Button type="submit" className="w-full" disabled={pending}>
             {pending ? t("creatingAccount") : t("createAccount")}
           </Button>
-          <p className="text-center text-sm text-slate-500">
+          <p className="text-center text-sm text-muted-foreground">
             {t("alreadyHaveAccount")}{" "}
             <Link href={`/${locale}/login`} className="font-medium text-primary hover:underline">
               {t("signIn")}
@@ -104,7 +104,7 @@ function FormField({ id, label, type, autoComplete, error, hint }: FormFieldProp
       {error ? (
         <p className="text-xs text-red-600">{error}</p>
       ) : hint ? (
-        <p className="text-xs text-slate-500">{hint}</p>
+        <p className="text-xs text-muted-foreground">{hint}</p>
       ) : null}
     </div>
   );

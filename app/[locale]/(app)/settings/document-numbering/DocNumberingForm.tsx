@@ -90,18 +90,18 @@ export function DocNumberingForm({
             {fieldError("template") ? (
               <p className="text-xs text-red-600">{fieldError("template")}</p>
             ) : (
-              <p className="text-xs text-slate-500">{t("templateHint")}</p>
+              <p className="text-xs text-muted-foreground">{t("templateHint")}</p>
             )}
           </div>
 
-          <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
-            <span className="text-xs uppercase tracking-wider text-slate-500">
+          <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">
               {t("preview")}
             </span>
-            <div className="mt-1 font-mono text-base text-slate-900">
+            <div className="mt-1 font-mono text-base text-foreground">
               {previewSample || "—"}
             </div>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-muted-foreground">
               {t("previewHint", { counter: (currentCounter + 1).toString() })}
             </p>
           </div>
@@ -113,7 +113,7 @@ export function DocNumberingForm({
               name="resetPolicy"
               defaultValue={initial.resetPolicy}
               disabled={!canEdit}
-              className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
+              className="h-10 w-full rounded-md border border-border bg-white px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {POLICIES.map((p) => (
                 <option key={p} value={p}>
@@ -150,13 +150,13 @@ function PlaceholderHelp() {
   ];
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         {t("placeholders")}
       </p>
-      <ul className="mt-2 space-y-1 text-xs text-slate-600">
+      <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
         {rows.map((r) => (
           <li key={r.token} className="flex gap-3">
-            <span className="font-mono text-slate-900">{r.token}</span>
+            <span className="font-mono text-foreground">{r.token}</span>
             <span>{r.desc}</span>
           </li>
         ))}

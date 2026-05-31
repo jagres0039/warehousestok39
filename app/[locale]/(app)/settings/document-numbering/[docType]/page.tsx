@@ -63,7 +63,7 @@ export default async function DocNumberingEditPage({ params }: PageProps) {
       <div>
         <Link
           href={`/${locale}/settings/document-numbering`}
-          className="text-sm text-slate-500 hover:underline"
+          className="text-sm text-muted-foreground hover:underline"
         >
           ← {tCommon("back")}
         </Link>

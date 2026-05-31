@@ -71,29 +71,29 @@ export default async function MovementsReportPage({ params, searchParams }: Page
 
       <form className="flex flex-wrap items-end gap-3" action="" method="GET">
         <div className="space-y-1">
-          <label className="block text-xs text-slate-600">{t("from")}</label>
+          <label className="block text-xs text-muted-foreground">{t("from")}</label>
           <input
             type="date"
             name="from"
             defaultValue={range.fromInput}
-            className="h-9 rounded-md border border-slate-300 px-3 text-sm"
+            className="h-9 rounded-md border border-border px-3 text-sm"
           />
         </div>
         <div className="space-y-1">
-          <label className="block text-xs text-slate-600">{t("to")}</label>
+          <label className="block text-xs text-muted-foreground">{t("to")}</label>
           <input
             type="date"
             name="to"
             defaultValue={range.toInput}
-            className="h-9 rounded-md border border-slate-300 px-3 text-sm"
+            className="h-9 rounded-md border border-border px-3 text-sm"
           />
         </div>
         <div className="space-y-1">
-          <label className="block text-xs text-slate-600">{tTx("warehouse")}</label>
+          <label className="block text-xs text-muted-foreground">{tTx("warehouse")}</label>
           <select
             name="warehouseId"
             defaultValue={warehouseId ?? ""}
-            className="h-9 rounded-md border border-slate-300 bg-white px-3 text-sm"
+            className="h-9 rounded-md border border-border bg-white px-3 text-sm"
           >
             <option value="">{t("allWarehouses")}</option>
             {warehouses.map((w) => (
@@ -104,11 +104,11 @@ export default async function MovementsReportPage({ params, searchParams }: Page
           </select>
         </div>
         <div className="space-y-1">
-          <label className="block text-xs text-slate-600">{t("docType")}</label>
+          <label className="block text-xs text-muted-foreground">{t("docType")}</label>
           <select
             name="refType"
             defaultValue={refType ?? ""}
-            className="h-9 rounded-md border border-slate-300 bg-white px-3 text-sm"
+            className="h-9 rounded-md border border-border bg-white px-3 text-sm"
           >
             <option value="">{t("allDocTypes")}</option>
             <option value="GoodsReceipt">{tTx("receiptsTitle")}</option>
@@ -118,13 +118,13 @@ export default async function MovementsReportPage({ params, searchParams }: Page
         </div>
         <button
           type="submit"
-          className="h-9 rounded-md bg-slate-900 px-3 text-sm font-medium text-white hover:bg-slate-800"
+          className="h-9 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
         >
           {tCommon("apply")}
         </button>
         <a
           href={exportHref}
-          className="h-9 rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium hover:bg-slate-50"
+          className="h-9 rounded-md border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted/40"
         >
           {t("exportExcel")}
         </a>
@@ -141,10 +141,10 @@ export default async function MovementsReportPage({ params, searchParams }: Page
         />
       </div>
 
-      <div className="rounded-md border border-slate-200 bg-white shadow-sm">
+      <div className="rounded-md border border-border bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="border-b border-slate-200 text-left text-xs uppercase tracking-wider text-slate-500">
+            <thead className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="px-4 py-2">{tTx("occurredAt")}</th>
                 <th className="px-4 py-2">{tTx("warehouse")}</th>
@@ -156,10 +156,10 @@ export default async function MovementsReportPage({ params, searchParams }: Page
                 <th className="px-4 py-2">{tTx("noteLabel")}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-border">
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-slate-500">
+                  <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
                     {t("noMovements")}
                   </td>
                 </tr>
@@ -167,13 +167,13 @@ export default async function MovementsReportPage({ params, searchParams }: Page
                 rows.map((r) => {
                   const isIn = r.qtyDelta > 0;
                   return (
-                    <tr key={r.id} className="hover:bg-slate-50">
-                      <td className="px-4 py-2 text-slate-600">
+                    <tr key={r.id} className="hover:bg-muted/40">
+                      <td className="px-4 py-2 text-muted-foreground">
                         {r.occurredAt.toISOString().slice(0, 16).replace("T", " ")}
                       </td>
-                      <td className="px-4 py-2 text-slate-600">{r.warehouseCode}</td>
+                      <td className="px-4 py-2 text-muted-foreground">{r.warehouseCode}</td>
                       <td className="px-4 py-2">
-                        <div className="font-mono text-xs text-slate-500">{r.itemSku}</div>
+                        <div className="font-mono text-xs text-muted-foreground">{r.itemSku}</div>
                         <div>{r.itemName}</div>
                       </td>
                       <td className="px-4 py-2">
@@ -199,7 +199,7 @@ export default async function MovementsReportPage({ params, searchParams }: Page
                       <td className="px-4 py-2 text-right font-mono">
                         {!isIn ? `${Math.abs(r.qtyDelta).toLocaleString(locale)} ${r.unitCode}` : ""}
                       </td>
-                      <td className="px-4 py-2 text-slate-600">{r.note ?? "—"}</td>
+                      <td className="px-4 py-2 text-muted-foreground">{r.note ?? "—"}</td>
                     </tr>
                   );
                 })
@@ -227,10 +227,10 @@ function SummaryCard({
   tone: "in" | "out" | "neutral";
 }) {
   const color =
-    tone === "in" ? "text-emerald-700" : tone === "out" ? "text-amber-700" : "text-slate-900";
+    tone === "in" ? "text-emerald-700" : tone === "out" ? "text-amber-700" : "text-foreground";
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p>
+    <div className="rounded-md border border-border bg-white p-4 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
       <p className={`mt-1 font-mono text-2xl font-semibold ${color}`}>
         {value.toLocaleString(locale)}
       </p>

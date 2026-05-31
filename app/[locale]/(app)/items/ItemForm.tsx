@@ -105,7 +105,7 @@ export function ItemForm({ locale, mode, initial, categories, units }: ItemFormP
                 id="categoryId"
                 name="categoryId"
                 defaultValue={initial?.categoryId ?? ""}
-                className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
+                className="h-10 w-full rounded-md border border-border bg-white px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
               >
                 <option value="">{t("categoryNone")}</option>
                 {categories.map((c) => (
@@ -122,7 +122,7 @@ export function ItemForm({ locale, mode, initial, categories, units }: ItemFormP
                 name="unitId"
                 defaultValue={initial?.unitId ?? ""}
                 required
-                className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
+                className="h-10 w-full rounded-md border border-border bg-white px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
               >
                 <option value="" disabled>
                   {t("unitPlaceholder")}

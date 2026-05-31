@@ -52,7 +52,7 @@ export function OrganizationForm({ locale, canEdit, initial }: OrganizationFormP
           <div className="space-y-1.5">
             <Label>{t("slug")}</Label>
             <Input value={initial.slug} disabled readOnly />
-            <p className="text-xs text-slate-500">{t("slugLockedHint")}</p>
+            <p className="text-xs text-muted-foreground">{t("slugLockedHint")}</p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -149,7 +149,7 @@ export function OrganizationForm({ locale, canEdit, initial }: OrganizationFormP
                 name="defaultLocale"
                 defaultValue={initial.defaultLocale}
                 disabled={!canEdit}
-                className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
+                className="h-10 w-full rounded-md border border-border bg-white px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <option value="id">{t("localeId")}</option>
                 <option value="en">{t("localeEn")}</option>

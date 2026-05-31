@@ -21,7 +21,11 @@
     "settings": "Pengaturan",
     "signOut": "Keluar",
     "masterData": "Master Data",
-    "transactions": "Transaksi"
+    "transactions": "Transaksi",
+    "openMenu": "Buka menu navigasi",
+    "collapseSidebar": "Ciutkan sidebar",
+    "expandSidebar": "Lebarkan sidebar",
+    "themeToggle": "Ubah tema (terang/gelap/sistem)"
   },
   "common": {
     "save": "Simpan",
@@ -372,7 +376,12 @@
     "masterDataCategories": "Kategori",
     "masterDataSuppliers": "Supplier",
     "masterDataCustomers": "Customer",
-    "masterDataWarehouses": "Gudang"
+    "masterDataWarehouses": "Gudang",
+    "movementSummaryTitle": "Masuk vs keluar",
+    "movementSummaryDescription": "Entri mutasi {days} hari terakhir",
+    "inboundLabel": "Entri masuk",
+    "outboundLabel": "Entri keluar",
+    "teamSizeFooter": "{count} anggota aktif di organisasi ini."
   },
   "landing": {
     "headline": "Atur stok gudang lebih rapi.",

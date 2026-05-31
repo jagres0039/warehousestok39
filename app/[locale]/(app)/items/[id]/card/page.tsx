@@ -64,20 +64,20 @@ export default async function ItemStockCardPage({ params, searchParams }: PagePr
         <div>
           <Link
             href={`/${locale}/items`}
-            className="text-xs text-slate-500 hover:underline"
+            className="text-xs text-muted-foreground hover:underline"
           >
             ← {tCommon("back")}
           </Link>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight">
             {t("stockCardTitle")}: <span className="font-mono">{card.item.sku}</span>
           </h1>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-muted-foreground">
             {card.item.name} ({card.item.unitCode})
           </p>
         </div>
         <a
           href={exportHref}
-          className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium hover:bg-slate-50"
+          className="rounded-md border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted/40"
         >
           {t("exportExcel")}
         </a>
@@ -85,29 +85,29 @@ export default async function ItemStockCardPage({ params, searchParams }: PagePr
 
       <form className="flex flex-wrap items-end gap-3" action="" method="GET">
         <div className="space-y-1">
-          <label className="block text-xs text-slate-600">{t("from")}</label>
+          <label className="block text-xs text-muted-foreground">{t("from")}</label>
           <input
             type="date"
             name="from"
             defaultValue={range.fromInput}
-            className="h-9 rounded-md border border-slate-300 px-3 text-sm"
+            className="h-9 rounded-md border border-border px-3 text-sm"
           />
         </div>
         <div className="space-y-1">
-          <label className="block text-xs text-slate-600">{t("to")}</label>
+          <label className="block text-xs text-muted-foreground">{t("to")}</label>
           <input
             type="date"
             name="to"
             defaultValue={range.toInput}
-            className="h-9 rounded-md border border-slate-300 px-3 text-sm"
+            className="h-9 rounded-md border border-border px-3 text-sm"
           />
         </div>
         <div className="space-y-1">
-          <label className="block text-xs text-slate-600">{tTx("warehouse")}</label>
+          <label className="block text-xs text-muted-foreground">{tTx("warehouse")}</label>
           <select
             name="warehouseId"
             defaultValue={warehouseId ?? ""}
-            className="h-9 rounded-md border border-slate-300 bg-white px-3 text-sm"
+            className="h-9 rounded-md border border-border bg-white px-3 text-sm"
           >
             <option value="">{t("allWarehouses")}</option>
             {warehouses.map((w) => (
@@ -119,7 +119,7 @@ export default async function ItemStockCardPage({ params, searchParams }: PagePr
         </div>
         <button
           type="submit"
-          className="h-9 rounded-md bg-slate-900 px-3 text-sm font-medium text-white hover:bg-slate-800"
+          className="h-9 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
         >
           {tCommon("apply")}
         </button>
@@ -128,20 +128,20 @@ export default async function ItemStockCardPage({ params, searchParams }: PagePr
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {t("openingBalance")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="font-mono text-2xl font-semibold">
               {card.openingBalance.toLocaleString(locale)}{" "}
-              <span className="text-sm font-normal text-slate-500">{card.item.unitCode}</span>
+              <span className="text-sm font-normal text-muted-foreground">{card.item.unitCode}</span>
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {t("entriesCount")}
             </CardTitle>
           </CardHeader>
@@ -153,22 +153,22 @@ export default async function ItemStockCardPage({ params, searchParams }: PagePr
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {t("closingBalance")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="font-mono text-2xl font-semibold">
               {card.closingBalance.toLocaleString(locale)}{" "}
-              <span className="text-sm font-normal text-slate-500">{card.item.unitCode}</span>
+              <span className="text-sm font-normal text-muted-foreground">{card.item.unitCode}</span>
             </p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="rounded-md border border-slate-200 bg-white shadow-sm">
+      <div className="rounded-md border border-border bg-white shadow-sm">
         <table className="w-full text-sm">
-          <thead className="border-b border-slate-200 text-left text-xs uppercase tracking-wider text-slate-500">
+          <thead className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
             <tr>
               <th className="px-4 py-2">{tTx("occurredAt")}</th>
               <th className="px-4 py-2">{tTx("warehouse")}</th>
@@ -180,10 +180,10 @@ export default async function ItemStockCardPage({ params, searchParams }: PagePr
               <th className="px-4 py-2">{tTx("noteLabel")}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-border">
             {card.entries.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-12 text-center text-slate-500">
+                <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
                   {t("noMovements")}
                 </td>
               </tr>
@@ -191,11 +191,11 @@ export default async function ItemStockCardPage({ params, searchParams }: PagePr
               card.entries.map((e) => {
                 const isIn = e.qtyDelta > 0;
                 return (
-                  <tr key={e.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-2 text-slate-600">
+                  <tr key={e.id} className="hover:bg-muted/40">
+                    <td className="px-4 py-2 text-muted-foreground">
                       {e.occurredAt.toISOString().slice(0, 16).replace("T", " ")}
                     </td>
-                    <td className="px-4 py-2 text-slate-600">{e.warehouseCode}</td>
+                    <td className="px-4 py-2 text-muted-foreground">{e.warehouseCode}</td>
                     <td className="px-4 py-2">
                       <Badge variant={moveTypeVariant[e.moveType] ?? "neutral"}>
                         {t(`moveType.${e.moveType}` as const)}
@@ -222,7 +222,7 @@ export default async function ItemStockCardPage({ params, searchParams }: PagePr
                     <td className="px-4 py-2 text-right font-mono font-medium">
                       {e.balanceAfter.toLocaleString(locale)}
                     </td>
-                    <td className="px-4 py-2 text-slate-600">{e.note ?? "—"}</td>
+                    <td className="px-4 py-2 text-muted-foreground">{e.note ?? "—"}</td>
                   </tr>
                 );
               })

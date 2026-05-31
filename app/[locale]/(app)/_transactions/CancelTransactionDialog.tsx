@@ -47,14 +47,14 @@ export function CancelTransactionDialog({
         {triggerLabel}
       </button>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-4">
           <form
             action={formAction}
             className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
           >
             <input type="hidden" name="locale" value={locale} />
             <h2 className="text-lg font-semibold">{title}</h2>
-            <p className="mt-1 text-sm text-slate-600">{t("cancelDialogBody")}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{t("cancelDialogBody")}</p>
             {state?.error === "REASON_REQUIRED" && (
               <p className="mt-2 text-sm text-red-600">{t("cancelReasonRequired")}</p>
             )}
@@ -72,7 +72,7 @@ export function CancelTransactionDialog({
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="rounded-md border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50"
+                className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-muted/40"
               >
                 {tCommon("cancel")}
               </button>
