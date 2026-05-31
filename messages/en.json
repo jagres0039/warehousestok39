@@ -19,9 +19,11 @@
     "lowStock": "Low Stock",
     "reports": "Reports",
     "settings": "Settings",
+    "imports": "Bulk import",
     "signOut": "Sign out",
     "masterData": "Master Data",
     "transactions": "Transactions",
+    "administration": "Administration",
     "openMenu": "Open navigation menu",
     "collapseSidebar": "Collapse sidebar",
     "expandSidebar": "Expand sidebar",
@@ -49,7 +51,11 @@
     "back": "Back",
     "stockCard": "Stock Card",
     "printPdf": "Print PDF",
-    "qrLabel": "QR Label"
+    "qrLabel": "QR Label",
+    "barcode": "Barcode",
+    "qrPreviewTitle": "Scan this barcode in any transaction form to autofill this item.",
+    "qrEncodes": "Encodes: {value}",
+    "qrPrintLabel": "Print printable label"
   },
   "transactions": {
     "docNo": "Doc No.",
@@ -109,7 +115,16 @@
     "adjustmentCreateTitle": "New Stock Adjustment",
     "adjustmentDetailTitle": "Stock Adjustment",
     "adjustmentSearchPlaceholder": "Search doc no. or reason...",
-    "postAdjustment": "Post Adjustment"
+    "postAdjustment": "Post Adjustment",
+    "scanItem": "Scan item",
+    "scanItemHint": "Point the camera at a barcode or QR code, or type it manually.",
+    "scanManualLabel": "Or enter the code manually",
+    "scanManualPlaceholder": "SKU or barcode",
+    "scanManualSubmit": "Use",
+    "scanStarting": "Starting camera…",
+    "scanPermissionDenied": "Camera permission denied. Allow access in your browser settings, or enter the code manually below.",
+    "scanNoCamera": "No camera detected on this device. Enter the code manually below.",
+    "scanNoMatch": "No item found for \"{code}\". Try again or pick from the list."
   },
   "stock": {
     "title": "Stock on hand",
@@ -394,5 +409,51 @@
     "featureBarcodeBody": "Capture transactions fast with a phone camera — no extra hardware required.",
     "featureReportsTitle": "Reports & export",
     "featureReportsBody": "Stock cards, movements, low-stock — export to Excel or PDF in one click."
+  },
+  "imports": {
+    "title": "Bulk import",
+    "description": "Onboard master data fast — upload a CSV file and we'll create the records for you.",
+    "pickEntity": "Pick what to import",
+    "entities": {
+      "items": "Items",
+      "suppliers": "Suppliers",
+      "customers": "Customers",
+      "categories": "Categories",
+      "warehouses": "Warehouses"
+    },
+    "entityIntro": {
+      "items": "Items reference an existing Unit (by code). Categories are matched by name; unknown categories are silently set to none.",
+      "suppliers": "Suppliers are looked up by their code, which must be unique within your organization.",
+      "customers": "Customers are looked up by their code, which must be unique within your organization.",
+      "categories": "Categories are deduped by slug (auto-generated from the name).",
+      "warehouses": "Warehouses are looked up by their code, which must be unique within your organization."
+    },
+    "columnsTitle": "CSV columns",
+    "downloadTemplate": "Download template",
+    "required": "required",
+    "optional": "optional",
+    "validUnitCodes": "Valid unit codes",
+    "knownCategories": "Known categories",
+    "none": "(none yet)",
+    "uploadTitle": "Upload & preview",
+    "chooseFile": "Choose CSV file",
+    "rowsLoaded": "{count, plural, one {# row} other {# rows}} loaded",
+    "reset": "Reset",
+    "importing": "Importing…",
+    "import": "Import {count, plural, one {# row} other {# rows}}",
+    "previewTruncated": "Showing first {shown} of {total} rows. The full file is sent on import.",
+    "summaryTotal": "Total rows",
+    "summaryCreated": "Created",
+    "summarySkipped": "Skipped",
+    "reason": "Reason",
+    "details": "Details",
+    "allCreated": "All rows were created successfully.",
+    "partialImportNote": "Partial imports are allowed. Fix any skipped rows in your CSV and re-upload — the created ones won't be touched.",
+    "reasons": {
+      "DUPLICATE_KEY": "Already exists",
+      "UNKNOWN_UNIT": "Unknown unit code",
+      "INVALID_VALUE": "Invalid value",
+      "EMPTY_ROW": "Empty row"
+    }
   }
 }

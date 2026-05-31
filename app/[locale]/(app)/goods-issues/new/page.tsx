@@ -35,7 +35,7 @@ export default async function NewGoodsIssuePage({ params }: PageProps) {
     prisma.item.findMany({
       where: { organizationId: session.organizationId, isActive: true },
       orderBy: { sku: "asc" },
-      select: { id: true, sku: true, name: true, unit: { select: { code: true } } },
+      select: { id: true, sku: true, name: true, barcode: true, unit: { select: { code: true } } },
     }),
   ]);
 
@@ -77,6 +77,7 @@ export default async function NewGoodsIssuePage({ params }: PageProps) {
           sku: i.sku,
           name: i.name,
           unitCode: i.unit.code,
+          barcode: i.barcode,
         }))}
         defaultWarehouseId={defaultWarehouse?.id}
         action={createGoodsIssueAction}

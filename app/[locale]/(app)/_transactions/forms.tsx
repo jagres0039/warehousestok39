@@ -1,12 +1,14 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useCallback, useState } from "react";
 import { useTranslations } from "next-intl";
+import { ScanLine } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { BarcodeScanner } from "@/components/barcode/barcode-scanner";
 import type { ActionResult } from "@/lib/transaction-schemas";
 
 export interface ItemOption {
@@ -14,6 +16,61 @@ export interface ItemOption {
   sku: string;
   name: string;
   unitCode: string;
+  barcode: string | null;
+}
+
+// Match a scanned/typed code against the item list. Barcode wins over SKU,
+// both case-insensitive. Trim whitespace because hardware scanners often
+// emit a trailing newline.
+function findItemByCode(items: ItemOption[], code: string): ItemOption | undefined {
+  const trimmed = code.trim();
+  if (!trimmed) return undefined;
+  const lower = trimmed.toLowerCase();
+  return (
+    items.find((it) => it.barcode && it.barcode.toLowerCase() === lower) ||
+    items.find((it) => it.sku.toLowerCase() === lower)
+  );
+}
+
+interface ItemPickerProps {
+  value: string;
+  onChange: (id: string) => void;
+  items: ItemOption[];
+  noItemsLabel: string;
+  scanLabel: string;
+  onOpenScan: () => void;
+}
+
+function ItemPicker({ value, onChange, items, noItemsLabel, scanLabel, onOpenScan }: ItemPickerProps) {
+  return (
+    <div className="flex items-stretch gap-1.5">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-9 w-full rounded-md border border-border bg-background px-2 text-sm"
+        required
+      >
+        {items.length === 0 ? (
+          <option value="">{noItemsLabel}</option>
+        ) : (
+          items.map((it) => (
+            <option key={it.id} value={it.id}>
+              {it.sku} — {it.name} ({it.unitCode})
+            </option>
+          ))
+        )}
+      </select>
+      <button
+        type="button"
+        onClick={onOpenScan}
+        aria-label={scanLabel}
+        title={scanLabel}
+        className="inline-flex h-9 shrink-0 items-center justify-center rounded-md border border-border bg-background px-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+      >
+        <ScanLine className="h-4 w-4" aria-hidden="true" />
+      </button>
+    </div>
+  );
 }
 
 export interface WarehouseOption {
@@ -71,6 +128,8 @@ export function GoodsReceiptForm({
   const [lines, setLines] = useState<ReceiptLineState[]>([
     { uid: makeUid(), itemId: items[0]?.id ?? "", qty: "", note: "" },
   ]);
+  const [scanningUid, setScanningUid] = useState<string | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
   const [state, formAction] = useActionState<ActionResult | undefined, FormData>(
     action,
     undefined,
@@ -82,6 +141,19 @@ export function GoodsReceiptForm({
     setLines((prev) => (prev.length === 1 ? prev : prev.filter((l) => l.uid !== uid)));
   const addLine = () =>
     setLines((prev) => [...prev, { uid: makeUid(), itemId: items[0]?.id ?? "", qty: "", note: "" }]);
+  const handleScanResult = useCallback(
+    (code: string) => {
+      const match = findItemByCode(items, code);
+      if (match && scanningUid) {
+        updateLine(scanningUid, { itemId: match.id });
+        setScanError(null);
+        setScanningUid(null);
+      } else {
+        setScanError(code);
+      }
+    },
+    [items, scanningUid],
+  );
 
   const linesPayload = JSON.stringify(
     lines.map((l) => ({ itemId: l.itemId, qty: l.qty, note: l.note })),
@@ -184,22 +256,17 @@ export function GoodsReceiptForm({
                   {lines.map((l) => (
                     <tr key={l.uid}>
                       <td className="px-3 py-2">
-                        <select
+                        <ItemPicker
                           value={l.itemId}
-                          onChange={(e) => updateLine(l.uid, { itemId: e.target.value })}
-                          className="h-9 w-full rounded-md border border-border bg-white px-2 text-sm"
-                          required
-                        >
-                          {items.length === 0 ? (
-                            <option value="">{t("noItems")}</option>
-                          ) : (
-                            items.map((it) => (
-                              <option key={it.id} value={it.id}>
-                                {it.sku} — {it.name} ({it.unitCode})
-                              </option>
-                            ))
-                          )}
-                        </select>
+                          onChange={(id) => updateLine(l.uid, { itemId: id })}
+                          items={items}
+                          noItemsLabel={t("noItems")}
+                          scanLabel={t("scanItem")}
+                          onOpenScan={() => {
+                            setScanError(null);
+                            setScanningUid(l.uid);
+                          }}
+                        />
                       </td>
                       <td className="px-3 py-2">
                         <Input
@@ -231,12 +298,31 @@ export function GoodsReceiptForm({
                 </tbody>
               </table>
             </div>
+            {scanError && (
+              <p className="text-sm text-destructive">
+                {t("scanNoMatch", { code: scanError })}
+              </p>
+            )}
           </div>
         </CardContent>
         <CardFooter className="justify-end gap-2">
           <SubmitButton pendingLabel={tCommon("saving")}>{t("postReceipt")}</SubmitButton>
         </CardFooter>
       </form>
+      <BarcodeScanner
+        open={scanningUid !== null}
+        onClose={() => setScanningUid(null)}
+        onResult={handleScanResult}
+        title={t("scanItem")}
+        description={t("scanItemHint")}
+        manualLabel={t("scanManualLabel")}
+        manualPlaceholder={t("scanManualPlaceholder")}
+        manualSubmit={t("scanManualSubmit")}
+        permissionDeniedLabel={t("scanPermissionDenied")}
+        noCameraLabel={t("scanNoCamera")}
+        startingLabel={t("scanStarting")}
+        closeLabel={tCommon("cancel")}
+      />
     </Card>
   );
 }
@@ -260,6 +346,8 @@ export function GoodsIssueForm({
   const [lines, setLines] = useState<ReceiptLineState[]>([
     { uid: makeUid(), itemId: items[0]?.id ?? "", qty: "", note: "" },
   ]);
+  const [scanningUid, setScanningUid] = useState<string | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
   const [state, formAction] = useActionState<ActionResult | undefined, FormData>(
     action,
     undefined,
@@ -271,6 +359,19 @@ export function GoodsIssueForm({
     setLines((prev) => (prev.length === 1 ? prev : prev.filter((l) => l.uid !== uid)));
   const addLine = () =>
     setLines((prev) => [...prev, { uid: makeUid(), itemId: items[0]?.id ?? "", qty: "", note: "" }]);
+  const handleScanResult = useCallback(
+    (code: string) => {
+      const match = findItemByCode(items, code);
+      if (match && scanningUid) {
+        updateLine(scanningUid, { itemId: match.id });
+        setScanError(null);
+        setScanningUid(null);
+      } else {
+        setScanError(code);
+      }
+    },
+    [items, scanningUid],
+  );
 
   const linesPayload = JSON.stringify(
     lines.map((l) => ({ itemId: l.itemId, qty: l.qty, note: l.note })),
@@ -376,22 +477,17 @@ export function GoodsIssueForm({
                   {lines.map((l) => (
                     <tr key={l.uid}>
                       <td className="px-3 py-2">
-                        <select
+                        <ItemPicker
                           value={l.itemId}
-                          onChange={(e) => updateLine(l.uid, { itemId: e.target.value })}
-                          className="h-9 w-full rounded-md border border-border bg-white px-2 text-sm"
-                          required
-                        >
-                          {items.length === 0 ? (
-                            <option value="">{t("noItems")}</option>
-                          ) : (
-                            items.map((it) => (
-                              <option key={it.id} value={it.id}>
-                                {it.sku} — {it.name} ({it.unitCode})
-                              </option>
-                            ))
-                          )}
-                        </select>
+                          onChange={(id) => updateLine(l.uid, { itemId: id })}
+                          items={items}
+                          noItemsLabel={t("noItems")}
+                          scanLabel={t("scanItem")}
+                          onOpenScan={() => {
+                            setScanError(null);
+                            setScanningUid(l.uid);
+                          }}
+                        />
                       </td>
                       <td className="px-3 py-2">
                         <Input
@@ -423,12 +519,31 @@ export function GoodsIssueForm({
                 </tbody>
               </table>
             </div>
+            {scanError && (
+              <p className="text-sm text-destructive">
+                {t("scanNoMatch", { code: scanError })}
+              </p>
+            )}
           </div>
         </CardContent>
         <CardFooter className="justify-end gap-2">
           <SubmitButton pendingLabel={tCommon("saving")}>{t("postIssue")}</SubmitButton>
         </CardFooter>
       </form>
+      <BarcodeScanner
+        open={scanningUid !== null}
+        onClose={() => setScanningUid(null)}
+        onResult={handleScanResult}
+        title={t("scanItem")}
+        description={t("scanItemHint")}
+        manualLabel={t("scanManualLabel")}
+        manualPlaceholder={t("scanManualPlaceholder")}
+        manualSubmit={t("scanManualSubmit")}
+        permissionDeniedLabel={t("scanPermissionDenied")}
+        noCameraLabel={t("scanNoCamera")}
+        startingLabel={t("scanStarting")}
+        closeLabel={tCommon("cancel")}
+      />
     </Card>
   );
 }
@@ -465,6 +580,8 @@ export function StockAdjustmentForm({
   const [lines, setLines] = useState<AdjustmentLineState[]>([
     { uid: makeUid(), itemId: items[0]?.id ?? "", direction: "IN", qty: "", note: "" },
   ]);
+  const [scanningUid, setScanningUid] = useState<string | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
   const [state, formAction] = useActionState<ActionResult | undefined, FormData>(
     action,
     undefined,
@@ -479,6 +596,19 @@ export function StockAdjustmentForm({
       ...prev,
       { uid: makeUid(), itemId: items[0]?.id ?? "", direction: "IN", qty: "", note: "" },
     ]);
+  const handleScanResult = useCallback(
+    (code: string) => {
+      const match = findItemByCode(items, code);
+      if (match && scanningUid) {
+        updateLine(scanningUid, { itemId: match.id });
+        setScanError(null);
+        setScanningUid(null);
+      } else {
+        setScanError(code);
+      }
+    },
+    [items, scanningUid],
+  );
 
   const linesPayload = JSON.stringify(
     lines.map((l) => ({
@@ -571,22 +701,17 @@ export function StockAdjustmentForm({
                   {lines.map((l) => (
                     <tr key={l.uid}>
                       <td className="px-3 py-2">
-                        <select
+                        <ItemPicker
                           value={l.itemId}
-                          onChange={(e) => updateLine(l.uid, { itemId: e.target.value })}
-                          className="h-9 w-full rounded-md border border-border bg-white px-2 text-sm"
-                          required
-                        >
-                          {items.length === 0 ? (
-                            <option value="">{t("noItems")}</option>
-                          ) : (
-                            items.map((it) => (
-                              <option key={it.id} value={it.id}>
-                                {it.sku} — {it.name} ({it.unitCode})
-                              </option>
-                            ))
-                          )}
-                        </select>
+                          onChange={(id) => updateLine(l.uid, { itemId: id })}
+                          items={items}
+                          noItemsLabel={t("noItems")}
+                          scanLabel={t("scanItem")}
+                          onOpenScan={() => {
+                            setScanError(null);
+                            setScanningUid(l.uid);
+                          }}
+                        />
                       </td>
                       <td className="px-3 py-2">
                         <select
@@ -632,12 +757,31 @@ export function StockAdjustmentForm({
                 </tbody>
               </table>
             </div>
+            {scanError && (
+              <p className="text-sm text-destructive">
+                {t("scanNoMatch", { code: scanError })}
+              </p>
+            )}
           </div>
         </CardContent>
         <CardFooter className="justify-end gap-2">
           <SubmitButton pendingLabel={tCommon("saving")}>{t("postAdjustment")}</SubmitButton>
         </CardFooter>
       </form>
+      <BarcodeScanner
+        open={scanningUid !== null}
+        onClose={() => setScanningUid(null)}
+        onResult={handleScanResult}
+        title={t("scanItem")}
+        description={t("scanItemHint")}
+        manualLabel={t("scanManualLabel")}
+        manualPlaceholder={t("scanManualPlaceholder")}
+        manualSubmit={t("scanManualSubmit")}
+        permissionDeniedLabel={t("scanPermissionDenied")}
+        noCameraLabel={t("scanNoCamera")}
+        startingLabel={t("scanStarting")}
+        closeLabel={tCommon("cancel")}
+      />
     </Card>
   );
 }

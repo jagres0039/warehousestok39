@@ -7,6 +7,7 @@ import { getStockCard } from "@/lib/reports";
 import { parseDateRange } from "@/lib/date-range";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ItemQr } from "@/components/barcode/item-qr";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +39,7 @@ export default async function ItemStockCardPage({ params, searchParams }: PagePr
   const range = parseDateRange(sp);
   const warehouseId = sp.warehouseId || undefined;
 
-  const [warehouses, card] = await Promise.all([
+  const [warehouses, card, itemMeta] = await Promise.all([
     prisma.warehouse.findMany({
       where: { organizationId: session.organizationId, isActive: true },
       orderBy: [{ isDefault: "desc" }, { code: "asc" }],
@@ -49,8 +50,18 @@ export default async function ItemStockCardPage({ params, searchParams }: PagePr
       to: range.to,
       warehouseId,
     }),
+    prisma.item.findFirst({
+      where: { id, organizationId: session.organizationId },
+      select: { barcode: true },
+    }),
   ]);
   if (!card) notFound();
+
+  // The QR encodes the barcode if present, otherwise the SKU. That way a
+  // scanner always lands on the same physical item regardless of whether the
+  // user assigned a GTIN-style barcode or relies on SKU alone.
+  const qrValue = itemMeta?.barcode || card.item.sku;
+  const labelHref = `/api/print/item-label/${id}?locale=${locale}`;
 
   const queryString = new URLSearchParams();
   if (range.fromInput) queryString.set("from", range.fromInput);
@@ -74,6 +85,12 @@ export default async function ItemStockCardPage({ params, searchParams }: PagePr
           <p className="text-sm text-muted-foreground">
             {card.item.name} ({card.item.unitCode})
           </p>
+          {itemMeta?.barcode && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              <span className="uppercase tracking-wide">{tCommon("barcode")}:</span>{" "}
+              <span className="font-mono">{itemMeta.barcode}</span>
+            </p>
+          )}
         </div>
         <a
           href={exportHref}
@@ -82,6 +99,30 @@ export default async function ItemStockCardPage({ params, searchParams }: PagePr
           {t("exportExcel")}
         </a>
       </div>
+
+      <Card>
+        <CardContent className="flex flex-wrap items-center gap-6 p-6">
+          <div className="shrink-0 rounded-lg border border-border bg-white p-3">
+            <ItemQr value={qrValue} size={128} />
+          </div>
+          <div className="flex-1 space-y-2 text-sm">
+            <p className="text-foreground">
+              <span className="font-medium">{tCommon("qrPreviewTitle")}</span>
+            </p>
+            <p className="text-muted-foreground">
+              {tCommon("qrEncodes", { value: qrValue })}
+            </p>
+            <a
+              href={labelHref}
+              target="_blank"
+              rel="noopener"
+              className="inline-flex items-center text-sm font-medium text-primary hover:underline"
+            >
+              {tCommon("qrPrintLabel")} →
+            </a>
+          </div>
+        </CardContent>
+      </Card>
 
       <form className="flex flex-wrap items-end gap-3" action="" method="GET">
         <div className="space-y-1">

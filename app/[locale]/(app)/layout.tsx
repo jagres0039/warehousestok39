@@ -5,6 +5,7 @@ import { Boxes } from "lucide-react";
 import { requireTenantSession } from "@/lib/session";
 import { signOutAction } from "./actions";
 import { SidebarNav, MobileNav } from "@/components/app/sidebar-nav";
+import { canAdminister } from "@/lib/role-guard";
 import { UserMenu } from "@/components/app/user-menu";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Badge, roleBadgeVariant } from "@/components/ui/badge";
@@ -70,6 +71,17 @@ export default async function AppLayout({ children, params }: LayoutProps) {
       ],
     },
   ];
+
+  // Admin-only section: bulk import. Hidden from OPERATOR/VIEWER so they
+  // don't see a link they can't open. The page itself also gates via
+  // assertCanAdminister, so this is just polish.
+  if (canAdminister(session.role)) {
+    navDef.push({
+      key: "administration",
+      labelKey: "administration",
+      items: [{ href: `/${locale}/imports`, key: "imports" }],
+    });
+  }
 
   const sections = navDef.map((section) => ({
     key: section.key,
