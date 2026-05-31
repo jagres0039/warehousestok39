@@ -163,9 +163,11 @@ Lihat [`docs/SPEC.md`](docs/SPEC.md) untuk detail. High-level:
 5. **Sprint 5 — Reports & export:** stock list, stock card, mutation report, Excel/PDF export. ✓
 6. **Sprint 6 — Barcode & settings:** QR labels, document numbering UI, org profile, locale switcher. ✓
 7. **Sprint 7 — Polish & launch:** seed/demo data, user docs, production deploy. ✓
-8. **Sprint 8 — User & role management:** undang/ubah-role/keluarkan anggota via link undangan (mock email), public accept page, guard OWNER terakhir. ✓ (you are here)
+8. **Sprint 8 — User & role management:** undang/ubah-role/keluarkan anggota via link undangan (mock email), public accept page, guard OWNER terakhir. ✓
+9. **Sprint 9 — UI modernization:** design tokens, dark mode (light/dark/system), shadcn-style primitives, KPI/sparkline dashboard, modern landing & auth pages. ✓
+10. **Sprint 10 — Barcode scan & bulk import:** kamera HP scan barcode/QR di form Receipt/Issue/Adjustment (autofill item), QR preview di stock card, bulk import CSV untuk 5 entitas master data (Items/Suppliers/Customers/Categories/Warehouses) dengan template download + preview + dedupe + summary. ✓ (you are here)
 
-Fase 2 (di luar MVP, sudah dimulai dari Sprint 8): Purchase Order/Sales Order, Invoice, scan kamera HP, multi-gudang transfer, dashboard grafik, audit log, email transport (Resend/SES) untuk undangan.
+Fase 2 (di luar MVP, sudah dimulai dari Sprint 8): Purchase Order/Sales Order, Invoice, audit log, multi-gudang transfer, dashboard grafik recharts, email transport (Resend/SES) untuk undangan, Excel/XLSX import, label printing batch.
 
 ## License
 

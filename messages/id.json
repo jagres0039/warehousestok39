@@ -19,9 +19,11 @@
     "lowStock": "Stok Rendah",
     "reports": "Laporan",
     "settings": "Pengaturan",
+    "imports": "Impor massal",
     "signOut": "Keluar",
     "masterData": "Master Data",
     "transactions": "Transaksi",
+    "administration": "Administrasi",
     "openMenu": "Buka menu navigasi",
     "collapseSidebar": "Ciutkan sidebar",
     "expandSidebar": "Lebarkan sidebar",
@@ -49,7 +51,11 @@
     "back": "Kembali",
     "stockCard": "Kartu Stok",
     "printPdf": "Cetak PDF",
-    "qrLabel": "Label QR"
+    "qrLabel": "Label QR",
+    "barcode": "Barcode",
+    "qrPreviewTitle": "Scan barcode ini di form transaksi mana pun untuk otomatis memilih barang ini.",
+    "qrEncodes": "Berisi: {value}",
+    "qrPrintLabel": "Cetak label siap print"
   },
   "transactions": {
     "docNo": "No. Dokumen",
@@ -109,7 +115,16 @@
     "adjustmentCreateTitle": "Penyesuaian Stok baru",
     "adjustmentDetailTitle": "Penyesuaian Stok",
     "adjustmentSearchPlaceholder": "Cari nomor dokumen atau alasan...",
-    "postAdjustment": "Posting Penyesuaian"
+    "postAdjustment": "Posting Penyesuaian",
+    "scanItem": "Scan barang",
+    "scanItemHint": "Arahkan kamera ke barcode atau QR, atau ketik manual.",
+    "scanManualLabel": "Atau ketik kodenya manual",
+    "scanManualPlaceholder": "SKU atau barcode",
+    "scanManualSubmit": "Pakai",
+    "scanStarting": "Menyalakan kamera…",
+    "scanPermissionDenied": "Akses kamera ditolak. Izinkan dari pengaturan browser, atau ketik manual di bawah.",
+    "scanNoCamera": "Tidak ada kamera di perangkat ini. Ketik manual di bawah.",
+    "scanNoMatch": "Tidak menemukan barang untuk \"{code}\". Coba lagi atau pilih dari daftar."
   },
   "stock": {
     "title": "Stok On-Hand",
@@ -394,5 +409,51 @@
     "featureBarcodeBody": "Input transaksi cepat dengan kamera HP — tanpa hardware tambahan.",
     "featureReportsTitle": "Laporan & ekspor",
     "featureReportsBody": "Kartu stok, mutasi, low-stock — ekspor ke Excel atau PDF dalam sekali klik."
+  },
+  "imports": {
+    "title": "Impor massal",
+    "description": "Onboarding master data secepat kilat — upload file CSV, biar kami yang buatkan recordnya.",
+    "pickEntity": "Pilih yang mau diimpor",
+    "entities": {
+      "items": "Barang",
+      "suppliers": "Supplier",
+      "customers": "Customer",
+      "categories": "Kategori",
+      "warehouses": "Gudang"
+    },
+    "entityIntro": {
+      "items": "Barang merujuk Unit yang sudah ada (lewat kodenya). Kategori dicocokkan via nama; yang tidak ditemukan akan diabaikan.",
+      "suppliers": "Supplier diidentifikasi via kode, harus unik dalam organisasi Anda.",
+      "customers": "Customer diidentifikasi via kode, harus unik dalam organisasi Anda.",
+      "categories": "Kategori dideduplikasi pakai slug (otomatis dari nama).",
+      "warehouses": "Gudang diidentifikasi via kode, harus unik dalam organisasi Anda."
+    },
+    "columnsTitle": "Kolom CSV",
+    "downloadTemplate": "Unduh template",
+    "required": "wajib",
+    "optional": "opsional",
+    "validUnitCodes": "Kode unit yang valid",
+    "knownCategories": "Kategori yang dikenal",
+    "none": "(belum ada)",
+    "uploadTitle": "Unggah & pratinjau",
+    "chooseFile": "Pilih file CSV",
+    "rowsLoaded": "{count, plural, one {# baris} other {# baris}} dimuat",
+    "reset": "Reset",
+    "importing": "Mengimpor…",
+    "import": "Impor {count, plural, one {# baris} other {# baris}}",
+    "previewTruncated": "Menampilkan {shown} dari {total} baris. Saat impor, semua baris dikirim.",
+    "summaryTotal": "Total baris",
+    "summaryCreated": "Berhasil",
+    "summarySkipped": "Dilewati",
+    "reason": "Alasan",
+    "details": "Detail",
+    "allCreated": "Semua baris berhasil dibuat.",
+    "partialImportNote": "Impor parsial diperbolehkan. Perbaiki baris yang dilewati di CSV lalu unggah ulang — baris yang sudah dibuat tidak akan tersentuh.",
+    "reasons": {
+      "DUPLICATE_KEY": "Sudah ada",
+      "UNKNOWN_UNIT": "Kode unit tidak dikenal",
+      "INVALID_VALUE": "Nilai tidak valid",
+      "EMPTY_ROW": "Baris kosong"
+    }
   }
 }

@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
   FileText,
+  Import,
   LayoutDashboard,
   PackageMinus,
   Ruler,
@@ -41,6 +42,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   lowStock: TrendingDown,
   reports: BarChart3,
   settings: Settings,
+  imports: Import,
 };
 
 interface NavItem {
