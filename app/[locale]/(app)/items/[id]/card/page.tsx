@@ -24,6 +24,12 @@ const moveTypeVariant: Record<string, "success" | "warning" | "muted" | "neutral
   RECEIPT_REVERSAL: "muted",
   ISSUE_REVERSAL: "muted",
   ADJUSTMENT_REVERSAL: "muted",
+  TRANSFER_IN: "success",
+  TRANSFER_OUT: "warning",
+  TRANSFER_REVERSAL: "muted",
+  OPNAME_IN: "success",
+  OPNAME_OUT: "warning",
+  OPNAME_REVERSAL: "muted",
 };
 
 export default async function ItemStockCardPage({ params, searchParams }: PageProps) {
@@ -279,5 +285,7 @@ function refLink(locale: string, refType: string, refId: string): string {
   if (refType === "GoodsReceipt") return `/${locale}/goods-receipts/${refId}`;
   if (refType === "GoodsIssue") return `/${locale}/goods-issues/${refId}`;
   if (refType === "StockAdjustment") return `/${locale}/adjustments/${refId}`;
+  if (refType === "StockTransfer") return `/${locale}/transfers/${refId}`;
+  if (refType === "StockOpname") return `/${locale}/opnames/${refId}`;
   return "#";
 }

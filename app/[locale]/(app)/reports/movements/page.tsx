@@ -22,6 +22,12 @@ const moveTypeVariant: Record<string, "success" | "warning" | "muted" | "neutral
   RECEIPT_REVERSAL: "muted",
   ISSUE_REVERSAL: "muted",
   ADJUSTMENT_REVERSAL: "muted",
+  TRANSFER_IN: "success",
+  TRANSFER_OUT: "warning",
+  TRANSFER_REVERSAL: "muted",
+  OPNAME_IN: "success",
+  OPNAME_OUT: "warning",
+  OPNAME_REVERSAL: "muted",
 };
 
 export default async function MovementsReportPage({ params, searchParams }: PageProps) {
@@ -36,7 +42,13 @@ export default async function MovementsReportPage({ params, searchParams }: Page
 
   const range = parseDateRange(sp);
   const warehouseId = sp.warehouseId || undefined;
-  const refType = sp.refType as "GoodsReceipt" | "GoodsIssue" | "StockAdjustment" | undefined;
+  const refType = sp.refType as
+    | "GoodsReceipt"
+    | "GoodsIssue"
+    | "StockAdjustment"
+    | "StockTransfer"
+    | "StockOpname"
+    | undefined;
 
   const [warehouses, rows] = await Promise.all([
     prisma.warehouse.findMany({
@@ -114,6 +126,8 @@ export default async function MovementsReportPage({ params, searchParams }: Page
             <option value="GoodsReceipt">{tTx("receiptsTitle")}</option>
             <option value="GoodsIssue">{tTx("issuesTitle")}</option>
             <option value="StockAdjustment">{tTx("adjustmentsTitle")}</option>
+            <option value="StockTransfer">{tTx("transfersTitle")}</option>
+            <option value="StockOpname">{tTx("opnamesTitle")}</option>
           </select>
         </div>
         <button
@@ -242,5 +256,7 @@ function refLink(locale: string, refType: string, refId: string): string {
   if (refType === "GoodsReceipt") return `/${locale}/goods-receipts/${refId}`;
   if (refType === "GoodsIssue") return `/${locale}/goods-issues/${refId}`;
   if (refType === "StockAdjustment") return `/${locale}/adjustments/${refId}`;
+  if (refType === "StockTransfer") return `/${locale}/transfers/${refId}`;
+  if (refType === "StockOpname") return `/${locale}/opnames/${refId}`;
   return "#";
 }

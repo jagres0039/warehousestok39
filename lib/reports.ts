@@ -112,6 +112,18 @@ export async function getStockCard(
         select: { id: true, docNo: true },
       });
       for (const r of recs) docNoByRef.set(`StockAdjustment:${r.id}`, r.docNo);
+    } else if (refType === "StockTransfer") {
+      const recs = await prisma.stockTransfer.findMany({
+        where: { id: { in: uniqueIds }, organizationId },
+        select: { id: true, docNo: true },
+      });
+      for (const r of recs) docNoByRef.set(`StockTransfer:${r.id}`, r.docNo);
+    } else if (refType === "StockOpname") {
+      const recs = await prisma.stockOpname.findMany({
+        where: { id: { in: uniqueIds }, organizationId },
+        select: { id: true, docNo: true },
+      });
+      for (const r of recs) docNoByRef.set(`StockOpname:${r.id}`, r.docNo);
     }
   }
 
@@ -168,7 +180,12 @@ export interface MovementFilter {
   from?: Date;
   to?: Date;
   warehouseId?: string;
-  refType?: "GoodsReceipt" | "GoodsIssue" | "StockAdjustment";
+  refType?:
+    | "GoodsReceipt"
+    | "GoodsIssue"
+    | "StockAdjustment"
+    | "StockTransfer"
+    | "StockOpname";
 }
 
 /**
@@ -227,6 +244,18 @@ export async function getMovementReport(
         select: { id: true, docNo: true },
       });
       for (const r of recs) docNoByRef.set(`StockAdjustment:${r.id}`, r.docNo);
+    } else if (refType === "StockTransfer") {
+      const recs = await prisma.stockTransfer.findMany({
+        where: { id: { in: uniqueIds }, organizationId },
+        select: { id: true, docNo: true },
+      });
+      for (const r of recs) docNoByRef.set(`StockTransfer:${r.id}`, r.docNo);
+    } else if (refType === "StockOpname") {
+      const recs = await prisma.stockOpname.findMany({
+        where: { id: { in: uniqueIds }, organizationId },
+        select: { id: true, docNo: true },
+      });
+      for (const r of recs) docNoByRef.set(`StockOpname:${r.id}`, r.docNo);
     }
   }
 

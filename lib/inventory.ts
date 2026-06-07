@@ -61,6 +61,23 @@ export interface PostAdjustmentInput {
   lines: AdjustmentLineInput[];
 }
 
+export interface TransferLineInput {
+  itemId: string;
+  qty: number;
+  note?: string;
+}
+
+export interface PostTransferInput {
+  organizationId: string;
+  orgSlug: string;
+  createdById: string;
+  fromWarehouseId: string;
+  toWarehouseId: string;
+  occurredAt?: Date;
+  note?: string;
+  lines: TransferLineInput[];
+}
+
 export class InsufficientStockError extends Error {
   itemId: string;
   warehouseId: string;
@@ -347,6 +364,117 @@ export async function postStockAdjustment(
   });
 }
 
+export class SameWarehouseTransferError extends Error {
+  constructor() {
+    super("Transfer source and destination must be different warehouses");
+    this.name = "SameWarehouseTransferError";
+  }
+}
+
+export async function postStockTransfer(
+  input: PostTransferInput,
+): Promise<{ id: string; docNo: string }> {
+  if (input.lines.length === 0) throw new Error("EMPTY_LINES");
+  for (const line of input.lines) {
+    if (!(line.qty > 0)) throw new Error("INVALID_QTY");
+  }
+  if (input.fromWarehouseId === input.toWarehouseId) {
+    throw new SameWarehouseTransferError();
+  }
+  const collapsed = collapseLines(input.lines);
+
+  return prisma.$transaction(async (tx) => {
+    // Lock source ledger rows so concurrent issues/transfers can't both pass
+    // the on-hand check. Destination doesn't need locking because we're only
+    // adding stock there.
+    await tx.$executeRaw`
+      SELECT id FROM "StockLedger"
+      WHERE "organizationId" = ${input.organizationId}
+        AND "warehouseId"    = ${input.fromWarehouseId}
+        AND "itemId" IN (${Prisma.join(collapsed.map((l) => l.itemId))})
+      FOR UPDATE
+    `;
+
+    const onHand = await readOnHand(
+      tx,
+      input.organizationId,
+      input.fromWarehouseId,
+      collapsed.map((l) => l.itemId),
+    );
+    for (const line of collapsed) {
+      const available = onHand.get(line.itemId) ?? 0;
+      if (line.qty > available) {
+        throw new InsufficientStockError(
+          line.itemId,
+          input.fromWarehouseId,
+          line.qty,
+          available,
+        );
+      }
+    }
+
+    const docNo = await issueDocumentNumber({
+      tx,
+      organizationId: input.organizationId,
+      docType: "STOCK_TRANSFER",
+      orgCode: input.orgSlug,
+      now: input.occurredAt,
+    });
+
+    const header = await tx.stockTransfer.create({
+      data: {
+        organizationId: input.organizationId,
+        docNo,
+        occurredAt: input.occurredAt ?? new Date(),
+        fromWarehouseId: input.fromWarehouseId,
+        toWarehouseId: input.toWarehouseId,
+        note: input.note ?? null,
+        createdById: input.createdById,
+        lines: {
+          create: input.lines.map((l) => ({
+            itemId: l.itemId,
+            qty: new Prisma.Decimal(l.qty),
+            note: l.note ?? null,
+          })),
+        },
+      },
+    });
+
+    // Two ledger entries per line: OUT at source, IN at destination, with the
+    // same occurredAt + refId so they can always be paired.
+    const occurredAt = input.occurredAt ?? new Date();
+    const ledgerRows = input.lines.flatMap((l) => [
+      {
+        organizationId: input.organizationId,
+        occurredAt,
+        itemId: l.itemId,
+        warehouseId: input.fromWarehouseId,
+        qtyDelta: new Prisma.Decimal(-l.qty),
+        moveType: "TRANSFER_OUT" as const,
+        refType: "StockTransfer",
+        refId: header.id,
+        note: l.note ?? null,
+        createdById: input.createdById,
+      },
+      {
+        organizationId: input.organizationId,
+        occurredAt,
+        itemId: l.itemId,
+        warehouseId: input.toWarehouseId,
+        qtyDelta: new Prisma.Decimal(l.qty),
+        moveType: "TRANSFER_IN" as const,
+        refType: "StockTransfer",
+        refId: header.id,
+        note: l.note ?? null,
+        createdById: input.createdById,
+      },
+    ]);
+    await tx.stockLedger.createMany({ data: ledgerRows });
+
+    return { id: header.id, docNo };
+  });
+}
+
 // --- Cancellation -------------------------------------------------------
 //
 // Cancelling a posted transaction writes reversal ledger entries (opposite
@@ -517,6 +645,393 @@ export async function cancelStockAdjustment(id: string, opts: CancelOpts): Promi
         note: opts.reason ?? null,
         createdById: opts.canceledById,
       })),
+    });
+  });
+}
+
+export async function cancelStockTransfer(id: string, opts: CancelOpts): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    const header = await tx.stockTransfer.findFirst({
+      where: { id, organizationId: opts.organizationId },
+      include: { lines: true },
+    });
+    if (!header) throw new Error("NOT_FOUND");
+    if (header.status !== "POSTED") throw new Error("ALREADY_CANCELED");
+
+    // Reversing a transfer adds stock back to the source and removes it from
+    // the destination -- the destination removal could drive on-hand negative
+    // if the receiver already issued the goods. Lock & validate destination.
+    const itemIds = Array.from(new Set(header.lines.map((l) => l.itemId)));
+    await tx.$executeRaw`
+      SELECT id FROM "StockLedger"
+      WHERE "organizationId" = ${opts.organizationId}
+        AND "warehouseId"    = ${header.toWarehouseId}
+        AND "itemId" IN (${Prisma.join(itemIds)})
+      FOR UPDATE
+    `;
+    const destOnHand = await readOnHand(
+      tx,
+      opts.organizationId,
+      header.toWarehouseId,
+      itemIds,
+    );
+    const collapsedRev = new Map<string, number>();
+    for (const l of header.lines) {
+      collapsedRev.set(l.itemId, (collapsedRev.get(l.itemId) ?? 0) + Number(l.qty));
+    }
+    for (const [itemId, qty] of collapsedRev) {
+      const available = destOnHand.get(itemId) ?? 0;
+      if (qty > available) {
+        throw new InsufficientStockError(
+          itemId,
+          header.toWarehouseId,
+          qty,
+          available,
+        );
+      }
+    }
+
+    await tx.stockTransfer.update({
+      where: { id },
+      data: {
+        status: "CANCELED",
+        canceledAt: new Date(),
+        canceledById: opts.canceledById,
+        cancelReason: opts.reason ?? null,
+      },
+    });
+
+    const occurredAt = new Date();
+    const ledgerRows = header.lines.flatMap((l) => [
+      {
+        organizationId: opts.organizationId,
+        occurredAt,
+        itemId: l.itemId,
+        warehouseId: header.fromWarehouseId,
+        qtyDelta: new Prisma.Decimal(Number(l.qty)),
+        moveType: "TRANSFER_REVERSAL" as const,
+        refType: "StockTransfer",
+        refId: header.id,
+        note: opts.reason ?? null,
+        createdById: opts.canceledById,
+      },
+      {
+        organizationId: opts.organizationId,
+        occurredAt,
+        itemId: l.itemId,
+        warehouseId: header.toWarehouseId,
+        qtyDelta: new Prisma.Decimal(-Number(l.qty)),
+        moveType: "TRANSFER_REVERSAL" as const,
+        refType: "StockTransfer",
+        refId: header.id,
+        note: opts.reason ?? null,
+        createdById: opts.canceledById,
+      },
+    ]);
+    await tx.stockLedger.createMany({ data: ledgerRows });
+  });
+}
+
+// --- Stock Opname -------------------------------------------------------
+//
+// Opnames are physical stock counts. Creating a draft snapshots the current
+// on-hand for every active item in the chosen warehouse (systemQty). The
+// operator then fills in countedQty per line. Posting writes one ledger
+// entry per line whose final on-hand differs from the count -- so concurrent
+// transactions between snapshot and post are honoured (the count becomes
+// the authoritative on-hand, not "snapshot + variance").
+
+export interface CreateOpnameDraftInput {
+  organizationId: string;
+  orgSlug: string;
+  createdById: string;
+  warehouseId: string;
+  occurredAt?: Date;
+  note?: string;
+}
+
+export async function createOpnameDraft(
+  input: CreateOpnameDraftInput,
+): Promise<{ id: string; docNo: string; lineCount: number }> {
+  return prisma.$transaction(async (tx) => {
+    // Snapshot every active item in the org. We snapshot the full catalog (not
+    // just items with non-zero stock) so the operator can record findings for
+    // items the system thinks are at zero too.
+    const items = await tx.item.findMany({
+      where: { organizationId: input.organizationId, isActive: true },
+      select: { id: true },
+      orderBy: { sku: "asc" },
+    });
+
+    const onHandRaw = await tx.$queryRaw<Array<{ itemId: string; qty: string }>>`
+      SELECT "itemId", COALESCE(SUM("qtyDelta"), 0)::text AS qty
+      FROM "StockLedger"
+      WHERE "organizationId" = ${input.organizationId}
+        AND "warehouseId"    = ${input.warehouseId}
+      GROUP BY "itemId"
+    `;
+    const onHand = new Map(onHandRaw.map((r) => [r.itemId, r.qty]));
+
+    const docNo = await issueDocumentNumber({
+      tx,
+      organizationId: input.organizationId,
+      docType: "STOCK_OPNAME",
+      orgCode: input.orgSlug,
+      now: input.occurredAt,
+    });
+
+    const header = await tx.stockOpname.create({
+      data: {
+        organizationId: input.organizationId,
+        docNo,
+        occurredAt: input.occurredAt ?? new Date(),
+        warehouseId: input.warehouseId,
+        note: input.note ?? null,
+        status: "DRAFT",
+        createdById: input.createdById,
+        lines: {
+          create: items.map((it) => {
+            const qty = new Prisma.Decimal(onHand.get(it.id) ?? "0");
+            return {
+              itemId: it.id,
+              systemQty: qty,
+              countedQty: qty,
+              varianceQty: new Prisma.Decimal(0),
+            };
+          }),
+        },
+      },
+    });
+
+    return { id: header.id, docNo, lineCount: items.length };
+  });
+}
+
+export interface UpdateOpnameLineInput {
+  organizationId: string;
+  opnameId: string;
+  itemId: string;
+  countedQty: number;
+  note?: string | null;
+}
+
+export async function updateOpnameLine(input: UpdateOpnameLineInput): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    const header = await tx.stockOpname.findFirst({
+      where: { id: input.opnameId, organizationId: input.organizationId },
+      select: { status: true },
+    });
+    if (!header) throw new Error("NOT_FOUND");
+    if (header.status !== "DRAFT") throw new Error("NOT_DRAFT");
+
+    const line = await tx.stockOpnameLine.findFirst({
+      where: { opnameId: input.opnameId, itemId: input.itemId },
+      select: { id: true, systemQty: true },
+    });
+    if (!line) throw new Error("LINE_NOT_FOUND");
+
+    const counted = new Prisma.Decimal(input.countedQty);
+    const variance = counted.minus(line.systemQty);
+
+    await tx.stockOpnameLine.update({
+      where: { id: line.id },
+      data: {
+        countedQty: counted,
+        varianceQty: variance,
+        note: input.note ?? null,
+      },
+    });
+  });
+}
+
+export interface PostOpnameInput {
+  organizationId: string;
+  opnameId: string;
+  postedById: string;
+}
+
+export async function postOpname(input: PostOpnameInput): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    const header = await tx.stockOpname.findFirst({
+      where: { id: input.opnameId, organizationId: input.organizationId },
+      include: { lines: { select: { itemId: true, countedQty: true } } },
+    });
+    if (!header) throw new Error("NOT_FOUND");
+    if (header.status !== "DRAFT") throw new Error("NOT_DRAFT");
+
+    // Re-read the current on-hand inside the transaction so concurrent
+    // mutations between snapshot and post don't make us write the wrong
+    // delta. We treat countedQty as authoritative -- the resulting on-hand
+    // after posting is exactly countedQty for each item.
+    const itemIds = header.lines.map((l) => l.itemId);
+    if (itemIds.length === 0) {
+      await tx.stockOpname.update({
+        where: { id: header.id },
+        data: {
+          status: "POSTED",
+          postedAt: new Date(),
+          postedById: input.postedById,
+        },
+      });
+      return;
+    }
+
+    await tx.$executeRaw`
+      SELECT id FROM "StockLedger"
+      WHERE "organizationId" = ${input.organizationId}
+        AND "warehouseId"    = ${header.warehouseId}
+        AND "itemId" IN (${Prisma.join(itemIds)})
+      FOR UPDATE
+    `;
+    const onHand = await readOnHand(
+      tx,
+      input.organizationId,
+      header.warehouseId,
+      itemIds,
+    );
+
+    const occurredAt = new Date();
+    const rows: Prisma.StockLedgerCreateManyInput[] = [];
+    for (const line of header.lines) {
+      const current = onHand.get(line.itemId) ?? 0;
+      const target = Number(line.countedQty);
+      const delta = target - current;
+      if (delta === 0) continue;
+      rows.push({
+        organizationId: input.organizationId,
+        occurredAt,
+        itemId: line.itemId,
+        warehouseId: header.warehouseId,
+        qtyDelta: new Prisma.Decimal(delta),
+        moveType: delta > 0 ? "OPNAME_IN" : "OPNAME_OUT",
+        refType: "StockOpname",
+        refId: header.id,
+        note: null,
+        createdById: input.postedById,
+      });
+    }
+    if (rows.length > 0) {
+      await tx.stockLedger.createMany({ data: rows });
+    }
+
+    await tx.stockOpname.update({
+      where: { id: header.id },
+      data: {
+        status: "POSTED",
+        postedAt: occurredAt,
+        postedById: input.postedById,
+      },
+    });
+  });
+}
+
+export async function cancelOpnameDraft(
+  id: string,
+  opts: { organizationId: string; canceledById: string; reason?: string | null },
+): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    const header = await tx.stockOpname.findFirst({
+      where: { id, organizationId: opts.organizationId },
+      select: { status: true },
+    });
+    if (!header) throw new Error("NOT_FOUND");
+    if (header.status !== "DRAFT") throw new Error("NOT_DRAFT");
+
+    await tx.stockOpname.update({
+      where: { id },
+      data: {
+        status: "CANCELED",
+        canceledAt: new Date(),
+        canceledById: opts.canceledById,
+        cancelReason: opts.reason ?? null,
+      },
+    });
+  });
+}
+
+export async function cancelPostedOpname(
+  id: string,
+  opts: { organizationId: string; canceledById: string; reason?: string | null },
+): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    const header = await tx.stockOpname.findFirst({
+      where: { id, organizationId: opts.organizationId },
+      select: { id: true, status: true, warehouseId: true },
+    });
+    if (!header) throw new Error("NOT_FOUND");
+    if (header.status !== "POSTED") throw new Error("NOT_POSTED");
+
+    // Find the ledger entries this opname produced and reverse them.
+    const entries = await tx.stockLedger.findMany({
+      where: {
+        organizationId: opts.organizationId,
+        refType: "StockOpname",
+        refId: id,
+        moveType: { in: ["OPNAME_IN", "OPNAME_OUT"] },
+      },
+      select: { itemId: true, qtyDelta: true },
+    });
+
+    if (entries.length > 0) {
+      const itemIds = Array.from(new Set(entries.map((e) => e.itemId)));
+      await tx.$executeRaw`
+        SELECT id FROM "StockLedger"
+        WHERE "organizationId" = ${opts.organizationId}
+          AND "warehouseId"    = ${header.warehouseId}
+          AND "itemId" IN (${Prisma.join(itemIds)})
+        FOR UPDATE
+      `;
+
+      // Validate that reversing won't drive on-hand negative. Net the per-item
+      // reversal deltas first.
+      const netRev = new Map<string, number>();
+      for (const e of entries) {
+        const rev = -Number(e.qtyDelta);
+        netRev.set(e.itemId, (netRev.get(e.itemId) ?? 0) + rev);
+      }
+      const onHand = await readOnHand(
+        tx,
+        opts.organizationId,
+        header.warehouseId,
+        itemIds,
+      );
+      for (const [itemId, rev] of netRev) {
+        const available = onHand.get(itemId) ?? 0;
+        if (available + rev < 0) {
+          throw new InsufficientStockError(
+            itemId,
+            header.warehouseId,
+            Math.abs(rev),
+            available,
+          );
+        }
+      }
+
+      const occurredAt = new Date();
+      await tx.stockLedger.createMany({
+        data: entries.map((e) => ({
+          organizationId: opts.organizationId,
+          occurredAt,
+          itemId: e.itemId,
+          warehouseId: header.warehouseId,
+          qtyDelta: new Prisma.Decimal(-Number(e.qtyDelta)),
+          moveType: "OPNAME_REVERSAL" as const,
+          refType: "StockOpname",
+          refId: id,
+          note: opts.reason ?? null,
+          createdById: opts.canceledById,
+        })),
+      });
+    }
+
+    await tx.stockOpname.update({
+      where: { id },
+      data: {
+        status: "CANCELED",
+        canceledAt: new Date(),
+        canceledById: opts.canceledById,
+        cancelReason: opts.reason ?? null,
+      },
     });
   });
 }
