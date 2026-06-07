@@ -28,6 +28,8 @@ const DEFAULT_DOC_TEMPLATES: Array<{ docType: DocType; template: string }> = [
   { docType: "GOODS_RECEIPT", template: "GR-{YYYY}{MM}-{SEQ:4}" },
   { docType: "GOODS_ISSUE", template: "GI-{YYYY}{MM}-{SEQ:4}" },
   { docType: "STOCK_ADJUSTMENT", template: "ADJ-{YYYY}-{SEQ:4}" },
+  { docType: "STOCK_TRANSFER", template: "TRF-{YYYY}{MM}-{SEQ:4}" },
+  { docType: "STOCK_OPNAME", template: "OPN-{YYYY}{MM}-{SEQ:4}" },
   { docType: "PURCHASE_ORDER", template: "PO-{YYYY}{MM}-{SEQ:4}" },
   { docType: "SALES_ORDER", template: "SO-{YYYY}{MM}-{SEQ:4}" },
   { docType: "INVOICE", template: "INV-{YYYY}{MM}-{SEQ:5}" },

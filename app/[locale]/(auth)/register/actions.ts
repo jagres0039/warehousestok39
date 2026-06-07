@@ -12,6 +12,8 @@ const DEFAULT_TEMPLATES = [
   { docType: "GOODS_RECEIPT" as const, template: "GR-{YYYY}{MM}-{SEQ:4}" },
   { docType: "GOODS_ISSUE" as const, template: "GI-{YYYY}{MM}-{SEQ:4}" },
   { docType: "STOCK_ADJUSTMENT" as const, template: "ADJ-{YYYY}-{SEQ:4}" },
+  { docType: "STOCK_TRANSFER" as const, template: "TRF-{YYYY}{MM}-{SEQ:4}" },
+  { docType: "STOCK_OPNAME" as const, template: "OPN-{YYYY}{MM}-{SEQ:4}" },
   { docType: "PURCHASE_ORDER" as const, template: "PO-{YYYY}{MM}-{SEQ:4}" },
   { docType: "SALES_ORDER" as const, template: "SO-{YYYY}{MM}-{SEQ:4}" },
   { docType: "INVOICE" as const, template: "INV-{YYYY}{MM}-{SEQ:5}" },

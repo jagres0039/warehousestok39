@@ -30,6 +30,8 @@ enum DocType {
   GOODS_RECEIPT
   GOODS_ISSUE
   STOCK_ADJUSTMENT
+  STOCK_TRANSFER
+  STOCK_OPNAME
   PURCHASE_ORDER
   SALES_ORDER
   INVOICE
@@ -48,6 +50,18 @@ enum StockMoveType {
   RECEIPT_REVERSAL
   ISSUE_REVERSAL
   ADJUSTMENT_REVERSAL
+  TRANSFER_OUT
+  TRANSFER_IN
+  TRANSFER_REVERSAL
+  OPNAME_IN
+  OPNAME_OUT
+  OPNAME_REVERSAL
+}
+
+enum OpnameStatus {
+  DRAFT
+  POSTED
+  CANCELED
 }
 
 enum AdjustmentDirection {
@@ -81,6 +95,8 @@ model Organization {
   goodsReceipts   GoodsReceipt[]
   goodsIssues     GoodsIssue[]
   adjustments     StockAdjustment[]
+  transfers       StockTransfer[]
+  opnames         StockOpname[]
   ledgerEntries   StockLedger[]
 
   @@index([slug])
@@ -101,11 +117,11 @@ model User {
 }
 
 model Membership {
-  id             String       @id @default(cuid())
+  id             String   @id @default(cuid())
   userId         String
   organizationId String
-  role           Role         @default(OPERATOR)
-  createdAt      DateTime     @default(now())
+  role           Role     @default(OPERATOR)
+  createdAt      DateTime @default(now())
 
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -214,13 +230,15 @@ model Item {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  organization      Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  category          Category?             @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  unit              Unit                  @relation(fields: [unitId], references: [id], onDelete: Restrict)
-  receiptLines      GoodsReceiptLine[]
-  issueLines        GoodsIssueLine[]
-  adjustmentLines   StockAdjustmentLine[]
-  ledgerEntries     StockLedger[]
+  organization    Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  category        Category?             @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  unit            Unit                  @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  receiptLines    GoodsReceiptLine[]
+  issueLines      GoodsIssueLine[]
+  adjustmentLines StockAdjustmentLine[]
+  transferLines   StockTransferLine[]
+  opnameLines     StockOpnameLine[]
+  ledgerEntries   StockLedger[]
 
   @@unique([organizationId, sku])
   @@unique([organizationId, barcode])
@@ -277,11 +295,14 @@ model Warehouse {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  goodsReceipts    GoodsReceipt[]
-  goodsIssues      GoodsIssue[]
-  adjustments      StockAdjustment[]
-  ledgerEntries    StockLedger[]
+  organization  Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  goodsReceipts GoodsReceipt[]
+  goodsIssues   GoodsIssue[]
+  adjustments   StockAdjustment[]
+  transfersFrom StockTransfer[]   @relation("StockTransferFromWarehouse")
+  transfersTo   StockTransfer[]   @relation("StockTransferToWarehouse")
+  opnames       StockOpname[]
+  ledgerEntries StockLedger[]
 
   @@unique([organizationId, code])
   @@index([organizationId, isActive])
@@ -309,8 +330,8 @@ model GoodsReceipt {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  organization Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  warehouse    Warehouse           @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  warehouse    Warehouse          @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
   lines        GoodsReceiptLine[]
 
   @@unique([organizationId, docNo])
@@ -319,11 +340,11 @@ model GoodsReceipt {
 }
 
 model GoodsReceiptLine {
-  id             String  @id @default(cuid())
-  receiptId      String
-  itemId         String
-  qty            Decimal @db.Decimal(18, 3)
-  note           String?
+  id        String  @id @default(cuid())
+  receiptId String
+  itemId    String
+  qty       Decimal @db.Decimal(18, 3)
+  note      String?
 
   receipt GoodsReceipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
   item    Item         @relation(fields: [itemId], references: [id], onDelete: Restrict)
@@ -435,4 +456,105 @@ model StockLedger {
   @@index([organizationId, itemId, warehouseId])
   @@index([organizationId, occurredAt])
   @@index([refType, refId])
+}
+
+// --- Sprint 11: Stock Transfer & Stock Opname ----------------------------
+//
+// Transfers move stock between two warehouses inside the same tenant. Posting
+// a transfer writes two ledger entries per line (TRANSFER_OUT at the source,
+// TRANSFER_IN at the destination) inside a single Prisma transaction, so the
+// total qty across the org is invariant.
+//
+// Opnames are physical stock counts. Creating a draft snapshots the current
+// on-hand for every active item in the chosen warehouse (systemQty). Operators
+// then fill in countedQty per line. Posting writes one ledger entry per
+// non-zero variance line (OPNAME_IN if positive, OPNAME_OUT if negative) using
+// the difference between the counted figure and current on-hand at post time
+// (not the snapshot) so concurrent transactions between snapshot and post are
+// honoured -- the count is treated as the new authoritative on-hand.
+
+model StockTransfer {
+  id              String    @id @default(cuid())
+  organizationId  String
+  docNo           String
+  occurredAt      DateTime  @default(now())
+  fromWarehouseId String
+  toWarehouseId   String
+  note            String?
+  status          DocStatus @default(POSTED)
+  createdById     String
+  canceledAt      DateTime?
+  canceledById    String?
+  cancelReason    String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  organization  Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  fromWarehouse Warehouse           @relation("StockTransferFromWarehouse", fields: [fromWarehouseId], references: [id], onDelete: Restrict)
+  toWarehouse   Warehouse           @relation("StockTransferToWarehouse", fields: [toWarehouseId], references: [id], onDelete: Restrict)
+  lines         StockTransferLine[]
+
+  @@unique([organizationId, docNo])
+  @@index([organizationId, occurredAt])
+  @@index([organizationId, status])
+}
+
+model StockTransferLine {
+  id         String  @id @default(cuid())
+  transferId String
+  itemId     String
+  qty        Decimal @db.Decimal(18, 3)
+  note       String?
+
+  transfer StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  item     Item          @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  @@index([transferId])
+  @@index([itemId])
+}
+
+model StockOpname {
+  id             String       @id @default(cuid())
+  organizationId String
+  docNo          String
+  occurredAt     DateTime     @default(now())
+  warehouseId    String
+  note           String?
+  status         OpnameStatus @default(DRAFT)
+  createdById    String
+  postedAt       DateTime?
+  postedById     String?
+  canceledAt     DateTime?
+  canceledById   String?
+  cancelReason   String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  warehouse    Warehouse         @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  lines        StockOpnameLine[]
+
+  @@unique([organizationId, docNo])
+  @@index([organizationId, occurredAt])
+  @@index([organizationId, status])
+}
+
+model StockOpnameLine {
+  id          String  @id @default(cuid())
+  opnameId    String
+  itemId      String
+  // Snapshot of on-hand at the moment the draft was created.
+  systemQty   Decimal @db.Decimal(18, 3)
+  // Quantity counted physically. Defaults to systemQty until edited.
+  countedQty  Decimal @db.Decimal(18, 3)
+  // countedQty - systemQty. Stored for fast reporting; recomputed on edit.
+  varianceQty Decimal @db.Decimal(18, 3)
+  note        String?
+
+  opname StockOpname @relation(fields: [opnameId], references: [id], onDelete: Cascade)
+  item   Item        @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  @@unique([opnameId, itemId])
+  @@index([opnameId])
+  @@index([itemId])
 }

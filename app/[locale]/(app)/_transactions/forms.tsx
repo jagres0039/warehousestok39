@@ -785,3 +785,244 @@ export function StockAdjustmentForm({
     </Card>
   );
 }
+
+interface TransferFormProps {
+  locale: string;
+  warehouses: WarehouseOption[];
+  items: ItemOption[];
+  defaultFromWarehouseId?: string;
+  defaultToWarehouseId?: string;
+  action: (
+    state: ActionResult | undefined,
+    formData: FormData,
+  ) => Promise<ActionResult>;
+}
+
+export function StockTransferForm({
+  locale,
+  warehouses,
+  items,
+  defaultFromWarehouseId,
+  defaultToWarehouseId,
+  action,
+}: TransferFormProps) {
+  const t = useTranslations("transactions");
+  const tCommon = useTranslations("common");
+  const tTransfers = useTranslations("transfers");
+
+  const [lines, setLines] = useState<ReceiptLineState[]>([
+    { uid: makeUid(), itemId: items[0]?.id ?? "", qty: "", note: "" },
+  ]);
+  const [scanningUid, setScanningUid] = useState<string | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const [state, formAction] = useActionState<ActionResult | undefined, FormData>(
+    action,
+    undefined,
+  );
+
+  const updateLine = (uid: string, patch: Partial<ReceiptLineState>) =>
+    setLines((prev) => prev.map((l) => (l.uid === uid ? { ...l, ...patch } : l)));
+  const removeLine = (uid: string) =>
+    setLines((prev) => (prev.length === 1 ? prev : prev.filter((l) => l.uid !== uid)));
+  const addLine = () =>
+    setLines((prev) => [...prev, { uid: makeUid(), itemId: items[0]?.id ?? "", qty: "", note: "" }]);
+  const handleScanResult = useCallback(
+    (code: string) => {
+      const match = findItemByCode(items, code);
+      if (match && scanningUid) {
+        updateLine(scanningUid, { itemId: match.id });
+        setScanError(null);
+        setScanningUid(null);
+      } else {
+        setScanError(code);
+      }
+    },
+    [items, scanningUid],
+  );
+
+  const linesPayload = JSON.stringify(
+    lines.map((l) => ({ itemId: l.itemId, qty: l.qty, note: l.note })),
+  );
+
+  // Pick default destination different from default source. Falls back to the
+  // first warehouse other than the default-source one.
+  const initialFrom = defaultFromWarehouseId ?? warehouses[0]?.id ?? "";
+  const initialTo =
+    defaultToWarehouseId ??
+    warehouses.find((w) => w.id !== initialFrom)?.id ??
+    warehouses[1]?.id ??
+    "";
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{tTransfers("createTitle")}</CardTitle>
+      </CardHeader>
+      <form action={formAction}>
+        <input type="hidden" name="locale" value={locale} />
+        <input type="hidden" name="lines" value={linesPayload} />
+        <CardContent className="space-y-6">
+          {state?.error === "EMPTY_LINES" && (
+            <p className="text-sm text-red-600">{t("errEmptyLines")}</p>
+          )}
+          {state?.error === "INVALID_QTY" && (
+            <p className="text-sm text-red-600">{t("errInvalidQty")}</p>
+          )}
+          {state?.error === "INSUFFICIENT_STOCK" && (
+            <p className="text-sm text-red-600">{t("errInsufficientStock")}</p>
+          )}
+          {state?.error === "INVALID_REF" && (
+            <p className="text-sm text-red-600">{t("errInvalidRef")}</p>
+          )}
+          {state?.error === "SAME_WAREHOUSE" && (
+            <p className="text-sm text-red-600">{tTransfers("errSameWarehouse")}</p>
+          )}
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="fromWarehouseId">{tTransfers("from")}</Label>
+              <select
+                id="fromWarehouseId"
+                name="fromWarehouseId"
+                defaultValue={initialFrom}
+                className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm"
+                required
+              >
+                {warehouses.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.code} — {w.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="toWarehouseId">{tTransfers("to")}</Label>
+              <select
+                id="toWarehouseId"
+                name="toWarehouseId"
+                defaultValue={initialTo}
+                className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm"
+                required
+              >
+                {warehouses.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.code} — {w.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="occurredAt">{t("occurredAt")}</Label>
+              <Input
+                id="occurredAt"
+                name="occurredAt"
+                type="datetime-local"
+                defaultValue={todayIsoLocal()}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="note">{t("noteLabel")}</Label>
+            <Textarea id="note" name="note" rows={2} />
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium">{t("linesTitle")}</h3>
+              <button
+                type="button"
+                onClick={addLine}
+                className="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted/40"
+              >
+                + {t("addLine")}
+              </button>
+            </div>
+            <div className="overflow-hidden rounded-md border border-border">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <th className="px-3 py-2">{t("item")}</th>
+                    <th className="w-32 px-3 py-2">{t("qty")}</th>
+                    <th className="px-3 py-2">{t("lineNote")}</th>
+                    <th className="w-10 px-3 py-2" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {lines.map((l) => (
+                    <tr key={l.uid}>
+                      <td className="px-3 py-2">
+                        <ItemPicker
+                          value={l.itemId}
+                          onChange={(id) => updateLine(l.uid, { itemId: id })}
+                          items={items}
+                          noItemsLabel={t("noItems")}
+                          scanLabel={t("scanItem")}
+                          onOpenScan={() => {
+                            setScanError(null);
+                            setScanningUid(l.uid);
+                          }}
+                        />
+                      </td>
+                      <td className="px-3 py-2">
+                        <Input
+                          value={l.qty}
+                          onChange={(e) => updateLine(l.uid, { qty: e.target.value })}
+                          placeholder="0"
+                          inputMode="decimal"
+                          required
+                        />
+                      </td>
+                      <td className="px-3 py-2">
+                        <Input
+                          value={l.note}
+                          onChange={(e) => updateLine(l.uid, { note: e.target.value })}
+                        />
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <button
+                          type="button"
+                          onClick={() => removeLine(l.uid)}
+                          disabled={lines.length === 1}
+                          className="text-xs text-red-600 hover:underline disabled:opacity-30"
+                        >
+                          {tCommon("delete")}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {scanError && (
+              <p className="text-sm text-destructive">
+                {t("scanNoMatch", { code: scanError })}
+              </p>
+            )}
+          </div>
+        </CardContent>
+        <CardFooter className="justify-end gap-2">
+          <SubmitButton pendingLabel={tCommon("saving")}>{tTransfers("postAction")}</SubmitButton>
+        </CardFooter>
+      </form>
+      <BarcodeScanner
+        open={scanningUid !== null}
+        onClose={() => setScanningUid(null)}
+        onResult={handleScanResult}
+        title={t("scanItem")}
+        description={t("scanItemHint")}
+        manualLabel={t("scanManualLabel")}
+        manualPlaceholder={t("scanManualPlaceholder")}
+        manualSubmit={t("scanManualSubmit")}
+        permissionDeniedLabel={t("scanPermissionDenied")}
+        noCameraLabel={t("scanNoCamera")}
+        startingLabel={t("scanStarting")}
+        closeLabel={tCommon("cancel")}
+      />
+    </Card>
+  );
+}

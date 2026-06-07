@@ -57,6 +57,8 @@ export default async function AppLayout({ children, params }: LayoutProps) {
         { href: `/${locale}/goods-receipts`, key: "goodsReceipts" },
         { href: `/${locale}/goods-issues`, key: "goodsIssues" },
         { href: `/${locale}/adjustments`, key: "adjustments" },
+        { href: `/${locale}/transfers`, key: "transfers" },
+        { href: `/${locale}/opnames`, key: "opnames" },
       ],
     },
     {

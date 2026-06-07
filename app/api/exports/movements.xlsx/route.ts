@@ -14,6 +14,12 @@ const MOVE_TYPE_LABEL: Record<string, string> = {
   RECEIPT_REVERSAL: "Pembatalan Masuk",
   ISSUE_REVERSAL: "Pembatalan Keluar",
   ADJUSTMENT_REVERSAL: "Pembatalan Adj.",
+  TRANSFER_OUT: "Transfer Keluar",
+  TRANSFER_IN: "Transfer Masuk",
+  TRANSFER_REVERSAL: "Pembatalan Transfer",
+  OPNAME_IN: "Opname Masuk",
+  OPNAME_OUT: "Opname Keluar",
+  OPNAME_REVERSAL: "Pembatalan Opname",
 };
 
 export async function GET(req: NextRequest): Promise<Response> {
@@ -27,7 +33,13 @@ export async function GET(req: NextRequest): Promise<Response> {
   });
   const range = parseDateRange(sp);
   const warehouseId = sp.warehouseId || undefined;
-  const refType = sp.refType as "GoodsReceipt" | "GoodsIssue" | "StockAdjustment" | undefined;
+  const refType = sp.refType as
+    | "GoodsReceipt"
+    | "GoodsIssue"
+    | "StockAdjustment"
+    | "StockTransfer"
+    | "StockOpname"
+    | undefined;
 
   const rows = await getMovementReport(session.organizationId, {
     from: range.from,
