@@ -9,10 +9,12 @@ import {
   ArrowLeftRight,
   ArrowUpFromLine,
   BarChart3,
+  Bell,
   Boxes,
   ChevronLeft,
   ChevronRight,
   ClipboardCheck,
+  Clock,
   FileText,
   Import,
   LayoutDashboard,
@@ -44,9 +46,11 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   stock: PackageMinus,
   movements: Activity,
   lowStock: TrendingDown,
+  expiringSoon: Clock,
   reports: BarChart3,
   settings: Settings,
   imports: Import,
+  notifications: Bell,
 };
 
 interface NavItem {

@@ -16,6 +16,7 @@ import {
   cancelSchema,
   type ActionResult,
 } from "@/lib/transaction-schemas";
+import { validateBatchReferences } from "@/lib/batch-helpers";
 
 function parseLines(raw: string): unknown[] {
   try {
@@ -54,7 +55,14 @@ export async function createGoodsIssueAction(
     return { ok: false, error: "INVALID_QTY" };
   }
   const lines = parsedLines
-    .filter((r): r is { success: true; data: { itemId: string; qty: number; note?: string | null } } => r.success)
+    .filter(
+      (
+        r,
+      ): r is {
+        success: true;
+        data: { itemId: string; batchId: string | null; qty: number; note?: string | null };
+      } => r.success,
+    )
     .map((r) => r.data);
 
   const [wh, cust, items, org] = await Promise.all([
@@ -72,7 +80,7 @@ export async function createGoodsIssueAction(
         id: { in: lines.map((l) => l.itemId) },
         isActive: true,
       },
-      select: { id: true },
+      select: { id: true, tracksBatch: true },
     }),
     prisma.organization.findUnique({
       where: { id: session.organizationId },
@@ -82,10 +90,17 @@ export async function createGoodsIssueAction(
   if (!wh) return { ok: false, error: "INVALID_REF" };
   if (header.data.customerId && !cust) return { ok: false, error: "INVALID_REF" };
   if (!org) return { ok: false, error: "INVALID_REF" };
-  const validItems = new Set(items.map((i) => i.id));
+  const itemsById = new Map(items.map((i) => [i.id, i]));
   for (const line of lines) {
-    if (!validItems.has(line.itemId)) return { ok: false, error: "INVALID_REF" };
+    if (!itemsById.has(line.itemId)) return { ok: false, error: "INVALID_REF" };
   }
+
+  const batchCheck = await validateBatchReferences(
+    session.organizationId,
+    lines,
+    itemsById,
+  );
+  if (!batchCheck.ok) return { ok: false, error: batchCheck.error };
 
   try {
     await postGoodsIssue({
@@ -98,6 +113,7 @@ export async function createGoodsIssueAction(
       note: header.data.note ?? undefined,
       lines: lines.map((l) => ({
         itemId: l.itemId,
+        batchId: l.batchId,
         qty: l.qty,
         note: l.note ?? undefined,
       })),

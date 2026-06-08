@@ -16,11 +16,18 @@ import {
 } from "../actions";
 
 export interface OpnameLineRow {
+  // Unique line identifier; the same item can appear multiple times if it
+  // tracks batches.
+  lineId: string;
   itemId: string;
+  batchId: string | null;
   sku: string;
   name: string;
   unitCode: string;
   barcode: string | null;
+  tracksBatch: boolean;
+  batchCode: string | null;
+  expiryDate: string | null;
   systemQty: string;
   countedQty: string;
   varianceQty: string;
@@ -98,36 +105,38 @@ export function OpnameCountClient({
     if (!isDraft) return;
     const trimmed = value.trim();
     if (trimmed === "") {
-      setPerRowError((prev) => ({ ...prev, [row.itemId]: t("errEmptyQty") }));
+      setPerRowError((prev) => ({ ...prev, [row.lineId]: t("errEmptyQty") }));
       return;
     }
     if (!/^\d+(\.\d+)?$/.test(trimmed)) {
-      setPerRowError((prev) => ({ ...prev, [row.itemId]: t("errInvalidQty") }));
+      setPerRowError((prev) => ({ ...prev, [row.lineId]: t("errInvalidQty") }));
       return;
     }
     setPerRowError((prev) => {
       const c = { ...prev };
-      delete c[row.itemId];
+      delete c[row.lineId];
       return c;
     });
     const fd = new FormData();
     fd.set("locale", locale);
     fd.set("itemId", row.itemId);
+    fd.set("lineId", row.lineId);
+    if (row.batchId) fd.set("batchId", row.batchId);
     fd.set("countedQty", trimmed);
-    setSavingItemId(row.itemId);
+    setSavingItemId(row.lineId);
     setSavedItemId(null);
     startTransition(async () => {
       const result = await updateOpnameLineAction(opnameId, undefined, fd);
       setSavingItemId(null);
       if (result?.ok) {
-        setSavedItemId(row.itemId);
+        setSavedItemId(row.lineId);
         router.refresh();
         // Clear "saved" indicator after a beat.
-        setTimeout(() => setSavedItemId((c) => (c === row.itemId ? null : c)), 1500);
+        setTimeout(() => setSavedItemId((c) => (c === row.lineId ? null : c)), 1500);
       } else {
         setPerRowError((prev) => ({
           ...prev,
-          [row.itemId]: t("errSaveFailed"),
+          [row.lineId]: t("errSaveFailed"),
         }));
       }
     });
@@ -272,13 +281,22 @@ export function OpnameCountClient({
                 ) : (
                   filtered.map((row) => {
                     const variance = Number(row.varianceQty);
+                    const expiry = row.expiryDate
+                      ? new Date(row.expiryDate).toISOString().slice(0, 10)
+                      : null;
                     return (
-                      <tr key={row.itemId} id={`opname-row-${row.itemId}`}>
+                      <tr key={row.lineId} id={`opname-row-${row.lineId}`}>
                         <td className="px-3 py-2">
                           <div className="font-mono text-xs text-muted-foreground">
                             {row.sku}
                           </div>
                           <div>{row.name}</div>
+                          {row.tracksBatch && row.batchCode ? (
+                            <div className="mt-0.5 text-xs text-muted-foreground">
+                              <span className="font-mono">{row.batchCode}</span>
+                              {expiry ? <span> · exp {expiry}</span> : null}
+                            </div>
+                          ) : null}
                         </td>
                         <td className="px-3 py-2 text-right font-mono text-muted-foreground">
                           {Number(row.systemQty).toLocaleString(locale)}
@@ -288,9 +306,9 @@ export function OpnameCountClient({
                             <CountedInput
                               defaultValue={row.countedQty}
                               onSave={(v) => handleSave(row, v)}
-                              saving={savingItemId === row.itemId}
-                              saved={savedItemId === row.itemId}
-                              error={perRowError[row.itemId]}
+                              saving={savingItemId === row.lineId}
+                              saved={savedItemId === row.lineId}
+                              error={perRowError[row.lineId]}
                             />
                           ) : (
                             <span className="font-mono">

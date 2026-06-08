@@ -97,6 +97,9 @@ model Organization {
   adjustments     StockAdjustment[]
   transfers       StockTransfer[]
   opnames         StockOpname[]
+  itemBatches     ItemBatch[]
+  notifications   Notification[]
+  alertCheckRuns  AlertCheckRun[]
   ledgerEntries   StockLedger[]
 
   @@index([slug])
@@ -226,6 +229,9 @@ model Item {
   // Stored as Decimal(18,3) to support fractional units (e.g. 0.250 kg).
   minStock       Decimal  @default(0) @db.Decimal(18, 3)
   imageUrl       String?
+  // When true, every stock movement for this item must reference an ItemBatch
+  // (lot tracking). False keeps the legacy item-only behaviour. Sprint 12.
+  tracksBatch    Boolean  @default(false)
   isActive       Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -233,11 +239,13 @@ model Item {
   organization    Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   category        Category?             @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   unit            Unit                  @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  batches         ItemBatch[]
   receiptLines    GoodsReceiptLine[]
   issueLines      GoodsIssueLine[]
   adjustmentLines StockAdjustmentLine[]
   transferLines   StockTransferLine[]
   opnameLines     StockOpnameLine[]
+  notifications   Notification[]
   ledgerEntries   StockLedger[]
 
   @@unique([organizationId, sku])
@@ -302,6 +310,7 @@ model Warehouse {
   transfersFrom StockTransfer[]   @relation("StockTransferFromWarehouse")
   transfersTo   StockTransfer[]   @relation("StockTransferToWarehouse")
   opnames       StockOpname[]
+  notifications Notification[]
   ledgerEntries StockLedger[]
 
   @@unique([organizationId, code])
@@ -343,14 +352,18 @@ model GoodsReceiptLine {
   id        String  @id @default(cuid())
   receiptId String
   itemId    String
+  // Required when item.tracksBatch = true. Null for non-batch items.
+  batchId   String?
   qty       Decimal @db.Decimal(18, 3)
   note      String?
 
   receipt GoodsReceipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
   item    Item         @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  batch   ItemBatch?   @relation(fields: [batchId], references: [id], onDelete: Restrict)
 
   @@index([receiptId])
   @@index([itemId])
+  @@index([batchId])
 }
 
 model GoodsIssue {
@@ -382,14 +395,17 @@ model GoodsIssueLine {
   id      String  @id @default(cuid())
   issueId String
   itemId  String
+  batchId String?
   qty     Decimal @db.Decimal(18, 3)
   note    String?
 
   issue GoodsIssue @relation(fields: [issueId], references: [id], onDelete: Cascade)
   item  Item       @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  batch ItemBatch? @relation(fields: [batchId], references: [id], onDelete: Restrict)
 
   @@index([issueId])
   @@index([itemId])
+  @@index([batchId])
 }
 
 model StockAdjustment {
@@ -420,15 +436,18 @@ model StockAdjustmentLine {
   id           String              @id @default(cuid())
   adjustmentId String
   itemId       String
+  batchId      String?
   direction    AdjustmentDirection
   qty          Decimal             @db.Decimal(18, 3)
   note         String?
 
   adjustment StockAdjustment @relation(fields: [adjustmentId], references: [id], onDelete: Cascade)
   item       Item            @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  batch      ItemBatch?      @relation(fields: [batchId], references: [id], onDelete: Restrict)
 
   @@index([adjustmentId])
   @@index([itemId])
+  @@index([batchId])
 }
 
 // Append-only stock movement log. On-hand stock for (item, warehouse) is
@@ -440,6 +459,11 @@ model StockLedger {
   occurredAt     DateTime      @default(now())
   itemId         String
   warehouseId    String
+  // Optional reference to the lot/batch this movement applies to. Null for
+  // items where tracksBatch = false. Set for every movement of a batch-tracked
+  // item; on-hand-per-batch is SUM(qtyDelta) grouped by (itemId, warehouseId,
+  // batchId).
+  batchId        String?
   // Signed delta in the item's unit. Positive = stock in, negative = stock out.
   qtyDelta       Decimal       @db.Decimal(18, 3)
   moveType       StockMoveType
@@ -452,8 +476,10 @@ model StockLedger {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   item         Item         @relation(fields: [itemId], references: [id], onDelete: Restrict)
   warehouse    Warehouse    @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  batch        ItemBatch?   @relation(fields: [batchId], references: [id], onDelete: Restrict)
 
   @@index([organizationId, itemId, warehouseId])
+  @@index([organizationId, itemId, warehouseId, batchId])
   @@index([organizationId, occurredAt])
   @@index([refType, refId])
 }
@@ -503,14 +529,18 @@ model StockTransferLine {
   id         String  @id @default(cuid())
   transferId String
   itemId     String
+  // Source batch (and destination — transfers preserve batch identity).
+  batchId    String?
   qty        Decimal @db.Decimal(18, 3)
   note       String?
 
   transfer StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
   item     Item          @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  batch    ItemBatch?    @relation(fields: [batchId], references: [id], onDelete: Restrict)
 
   @@index([transferId])
   @@index([itemId])
+  @@index([batchId])
 }
 
 model StockOpname {
@@ -543,6 +573,10 @@ model StockOpnameLine {
   id          String  @id @default(cuid())
   opnameId    String
   itemId      String
+  // Optional batch reference. Non-batch items always have batchId = null and
+  // the (opnameId, itemId, batchId) tuple has at most one row per item.
+  // Batch-tracked items get one row per (item, batch) pair.
+  batchId     String?
   // Snapshot of on-hand at the moment the draft was created.
   systemQty   Decimal @db.Decimal(18, 3)
   // Quantity counted physically. Defaults to systemQty until edited.
@@ -553,8 +587,125 @@ model StockOpnameLine {
 
   opname StockOpname @relation(fields: [opnameId], references: [id], onDelete: Cascade)
   item   Item        @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  batch  ItemBatch?  @relation(fields: [batchId], references: [id], onDelete: Restrict)
 
-  @@unique([opnameId, itemId])
+  // batchId may be null for non-batch items, so we use a partial-style unique
+  // by including batchId. Postgres treats (X, Y, NULL) as distinct from
+  // (X, Y, NULL) which makes the unique permissive for nulls — but per-item
+  // we ensure single row in application code. For batch items each
+  // (opnameId, itemId, batchId) tuple is naturally unique because every
+  // batch has a non-null id.
+  @@unique([opnameId, itemId, batchId])
   @@index([opnameId])
   @@index([itemId])
+  @@index([batchId])
+}
+
+// --- Sprint 12: Lot / Batch tracking + Notifications ---------------------
+//
+// ItemBatch is per (item, batchCode). batchCode is supplied by the operator at
+// receipt time; we don't auto-generate it because suppliers usually print real
+// lot numbers on the carton. expiryDate is optional for non-perishables.
+// On-hand per batch is computed by summing StockLedger.qtyDelta filtered by
+// (itemId, warehouseId, batchId). Batches are never deleted; isActive is the
+// soft-disable flag, but movements can still reference an inactive batch.
+
+model ItemBatch {
+  id             String    @id @default(cuid())
+  organizationId String
+  itemId         String
+  batchCode      String
+  mfgDate        DateTime?
+  expiryDate     DateTime?
+  // Optional cost reference for inventory valuation; not used for math yet.
+  costPrice      Decimal?  @db.Decimal(18, 4)
+  note           String?
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization    Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  item            Item                  @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  receiptLines    GoodsReceiptLine[]
+  issueLines      GoodsIssueLine[]
+  adjustmentLines StockAdjustmentLine[]
+  transferLines   StockTransferLine[]
+  opnameLines     StockOpnameLine[]
+  notifications   Notification[]
+  ledgerEntries   StockLedger[]
+
+  @@unique([organizationId, itemId, batchCode])
+  @@index([organizationId, itemId, isActive])
+  @@index([organizationId, expiryDate])
+}
+
+enum NotificationType {
+  LOW_STOCK
+  EXPIRING_SOON
+  EXPIRED
+}
+
+enum NotificationSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+// In-app notifications. The cron endpoint upserts one row per
+// (organizationId, type, itemId, batchId, dateBucket) so re-running the check
+// the same day doesn't fan out duplicates. Marking as read is a per-row flag;
+// when the underlying condition resolves (stock recovers, batch consumed) the
+// row stays for audit but isResolved gets flipped.
+model Notification {
+  id             String               @id @default(cuid())
+  organizationId String
+  type           NotificationType
+  severity       NotificationSeverity @default(WARNING)
+  itemId         String?
+  batchId        String?
+  warehouseId    String?
+  // Idempotency: at most one row per (org, type, item, batch, dateBucket).
+  // dateBucket is YYYY-MM-DD of when the alert was first raised.
+  dateBucket     String
+  // Snapshot fields used to render the alert without re-querying.
+  title          String
+  body           String
+  // Numeric payload for sorting/filtering (e.g. days-to-expiry, shortage qty).
+  metricValue    Decimal?             @db.Decimal(18, 3)
+  isRead         Boolean              @default(false)
+  readAt         DateTime?
+  isResolved     Boolean              @default(false)
+  resolvedAt     DateTime?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  item         Item?        @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  batch        ItemBatch?   @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  warehouse    Warehouse?   @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+
+  @@unique([organizationId, type, itemId, batchId, dateBucket])
+  @@index([organizationId, isRead, isResolved])
+  @@index([organizationId, createdAt])
+}
+
+// Audit row written every time the cron endpoint runs the alert sweep, so
+// admins can see when alerts were last refreshed and how many were created.
+model AlertCheckRun {
+  id             String    @id @default(cuid())
+  organizationId String
+  startedAt      DateTime  @default(now())
+  finishedAt     DateTime?
+  // Counts populated when the run finishes.
+  itemsScanned   Int       @default(0)
+  batchesScanned Int       @default(0)
+  alertsCreated  Int       @default(0)
+  alertsResolved Int       @default(0)
+  triggeredById  String?
+  triggerSource  String    @default("cron")
+  errorMessage   String?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, startedAt])
 }

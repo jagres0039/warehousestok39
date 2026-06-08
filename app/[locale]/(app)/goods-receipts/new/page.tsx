@@ -35,7 +35,19 @@ export default async function NewGoodsReceiptPage({ params }: PageProps) {
     prisma.item.findMany({
       where: { organizationId: session.organizationId, isActive: true },
       orderBy: { sku: "asc" },
-      select: { id: true, sku: true, name: true, barcode: true, unit: { select: { code: true } } },
+      select: {
+        id: true,
+        sku: true,
+        name: true,
+        barcode: true,
+        tracksBatch: true,
+        unit: { select: { code: true } },
+        batches: {
+          where: { isActive: true },
+          orderBy: [{ expiryDate: "asc" }, { batchCode: "asc" }],
+          select: { id: true, batchCode: true, expiryDate: true },
+        },
+      },
     }),
   ]);
 
@@ -78,6 +90,12 @@ export default async function NewGoodsReceiptPage({ params }: PageProps) {
           name: i.name,
           unitCode: i.unit.code,
           barcode: i.barcode,
+          tracksBatch: i.tracksBatch,
+          batches: i.batches.map((b) => ({
+            id: b.id,
+            batchCode: b.batchCode,
+            expiryDate: b.expiryDate ? b.expiryDate.toISOString() : null,
+          })),
         }))}
         defaultWarehouseId={defaultWarehouse?.id}
         action={createGoodsReceiptAction}

@@ -12,6 +12,7 @@ import { setRequestLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { requireTenantSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { canAdminister } from "@/lib/role-guard";
 import { cn } from "@/lib/utils";
 import {
   Card,
@@ -21,6 +22,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge, roleBadgeVariant } from "@/components/ui/badge";
+import { StockAlertsCheckButton } from "./StockAlertsCheckButton";
 
 export const dynamic = "force-dynamic";
 
@@ -126,6 +128,11 @@ export default async function DashboardPage({ params }: PageProps) {
             <Badge variant={roleBadgeVariant(session.role)}>{session.role}</Badge>
           </div>
         </div>
+        {canAdminister(session.role) ? (
+          <div className="mt-4 border-t border-border/70 pt-4">
+            <StockAlertsCheckButton locale={locale} />
+          </div>
+        ) : null}
       </section>
 
       <section className="grid gap-4 md:grid-cols-3">

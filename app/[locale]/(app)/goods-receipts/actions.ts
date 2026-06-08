@@ -56,7 +56,26 @@ export async function createGoodsReceiptAction(
     return { ok: false, error: "INVALID_QTY" };
   }
   const lines = parsedLines
-    .filter((r): r is { success: true; data: { itemId: string; qty: number; note?: string | null } } => r.success)
+    .filter(
+      (
+        r,
+      ): r is {
+        success: true;
+        data: {
+          itemId: string;
+          batchId: string | null;
+          newBatch?: {
+            batchCode: string;
+            expiryDate?: string | null;
+            mfgDate?: string | null;
+            costPrice?: number | null;
+            note?: string | null;
+          } | null;
+          qty: number;
+          note?: string | null;
+        };
+      } => r.success,
+    )
     .map((r) => r.data);
 
   // Sanity-check refs belong to this tenant.
@@ -75,14 +94,46 @@ export async function createGoodsReceiptAction(
         id: { in: lines.map((l) => l.itemId) },
         isActive: true,
       },
-      select: { id: true },
+      select: { id: true, tracksBatch: true },
     }),
   ]);
   if (!wh) return { ok: false, error: "INVALID_REF" };
   if (header.data.supplierId && !sup) return { ok: false, error: "INVALID_REF" };
-  const validItems = new Set(items.map((i) => i.id));
+  const itemsById = new Map(items.map((i) => [i.id, i]));
   for (const line of lines) {
-    if (!validItems.has(line.itemId)) return { ok: false, error: "INVALID_REF" };
+    if (!itemsById.has(line.itemId)) return { ok: false, error: "INVALID_REF" };
+  }
+
+  // Validate batch shape per item: batch-tracked items must have either an
+  // existing batchId or a newBatch payload; non-batch items must have neither.
+  for (const line of lines) {
+    const item = itemsById.get(line.itemId)!;
+    if (item.tracksBatch) {
+      if (!line.batchId && !line.newBatch) return { ok: false, error: "BATCH_REQUIRED" };
+    } else {
+      if (line.batchId || line.newBatch) return { ok: false, error: "BATCH_NOT_ALLOWED" };
+    }
+  }
+
+  // Verify referenced existing batches belong to the right item + tenant.
+  const refBatchIds = lines
+    .filter((l) => l.batchId)
+    .map((l) => l.batchId as string);
+  if (refBatchIds.length > 0) {
+    const batches = await prisma.itemBatch.findMany({
+      where: {
+        organizationId: session.organizationId,
+        id: { in: refBatchIds },
+        isActive: true,
+      },
+      select: { id: true, itemId: true },
+    });
+    const batchById = new Map(batches.map((b) => [b.id, b]));
+    for (const line of lines) {
+      if (!line.batchId) continue;
+      const b = batchById.get(line.batchId);
+      if (!b || b.itemId !== line.itemId) return { ok: false, error: "INVALID_REF" };
+    }
   }
 
   const org = await prisma.organization.findUnique({
@@ -90,6 +141,44 @@ export async function createGoodsReceiptAction(
     select: { slug: true },
   });
   if (!org) return { ok: false, error: "INVALID_REF" };
+
+  // Materialize newBatch payloads into ItemBatch rows BEFORE posting the
+  // receipt so the ledger can FK to them. We use upsert keyed on
+  // (organizationId, itemId, batchCode) so re-submits don't create dupes.
+  const resolvedBatchIdByLineIdx = new Map<number, string | null>();
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!;
+    if (line.newBatch) {
+      const created = await prisma.itemBatch.upsert({
+        where: {
+          organizationId_itemId_batchCode: {
+            organizationId: session.organizationId,
+            itemId: line.itemId,
+            batchCode: line.newBatch.batchCode,
+          },
+        },
+        create: {
+          organizationId: session.organizationId,
+          itemId: line.itemId,
+          batchCode: line.newBatch.batchCode,
+          expiryDate: line.newBatch.expiryDate ? new Date(line.newBatch.expiryDate) : null,
+          mfgDate: line.newBatch.mfgDate ? new Date(line.newBatch.mfgDate) : null,
+          costPrice: line.newBatch.costPrice != null ? line.newBatch.costPrice : null,
+          note: line.newBatch.note ?? null,
+        },
+        update: {
+          // Backfill expiry/mfg/cost only when the existing record is empty.
+          expiryDate: line.newBatch.expiryDate ? new Date(line.newBatch.expiryDate) : undefined,
+          mfgDate: line.newBatch.mfgDate ? new Date(line.newBatch.mfgDate) : undefined,
+          costPrice: line.newBatch.costPrice != null ? line.newBatch.costPrice : undefined,
+        },
+        select: { id: true },
+      });
+      resolvedBatchIdByLineIdx.set(i, created.id);
+    } else {
+      resolvedBatchIdByLineIdx.set(i, line.batchId);
+    }
+  }
 
   try {
     await postGoodsReceipt({
@@ -100,8 +189,9 @@ export async function createGoodsReceiptAction(
       supplierId: header.data.supplierId ?? null,
       occurredAt: new Date(header.data.occurredAt),
       note: header.data.note ?? undefined,
-      lines: lines.map((l) => ({
+      lines: lines.map((l, i) => ({
         itemId: l.itemId,
+        batchId: resolvedBatchIdByLineIdx.get(i) ?? null,
         qty: l.qty,
         note: l.note ?? undefined,
       })),

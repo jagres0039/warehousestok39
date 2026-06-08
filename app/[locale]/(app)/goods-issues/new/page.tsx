@@ -3,6 +3,7 @@ import { setRequestLocale, getTranslations } from "next-intl/server";
 import { requireTenantSession } from "@/lib/session";
 import { assertCanMutate } from "@/lib/role-guard";
 import { prisma } from "@/lib/prisma";
+import { getStockOnHandPerBatch } from "@/lib/inventory";
 import { PageHeader } from "@/components/page-header";
 import { GoodsIssueForm } from "../../_transactions/forms";
 import { createGoodsIssueAction } from "../actions";
@@ -35,10 +36,36 @@ export default async function NewGoodsIssuePage({ params }: PageProps) {
     prisma.item.findMany({
       where: { organizationId: session.organizationId, isActive: true },
       orderBy: { sku: "asc" },
-      select: { id: true, sku: true, name: true, barcode: true, unit: { select: { code: true } } },
+      select: {
+        id: true,
+        sku: true,
+        name: true,
+        barcode: true,
+        tracksBatch: true,
+        unit: { select: { code: true } },
+        batches: {
+          where: { isActive: true },
+          orderBy: [{ expiryDate: "asc" }, { batchCode: "asc" }],
+          select: { id: true, batchCode: true, expiryDate: true },
+        },
+      },
     }),
   ]);
 
+  const defaultWarehouse = warehouses.find((w) => w.isDefault) ?? warehouses[0];
+  // Per-batch on-hand at the default source warehouse (used for FEFO labels).
+  // Page is force-dynamic so we re-render on warehouse change via reload.
+  const onHandRows = defaultWarehouse
+    ? await getStockOnHandPerBatch(session.organizationId, {
+        warehouseId: defaultWarehouse.id,
+      })
+    : [];
+  const onHandByBatch = new Map<string, number>();
+  for (const row of onHandRows) {
+    if (row.batchId) onHandByBatch.set(row.batchId, row.qty);
+  }
+
+  // (defaultWarehouse already computed above)
   if (warehouses.length === 0 || items.length === 0) {
     return (
       <div className="mx-auto max-w-2xl space-y-4">
@@ -64,8 +91,6 @@ export default async function NewGoodsIssuePage({ params }: PageProps) {
     );
   }
 
-  const defaultWarehouse = warehouses.find((w) => w.isDefault) ?? warehouses[0];
-
   return (
     <div className="mx-auto max-w-4xl">
       <GoodsIssueForm
@@ -78,6 +103,15 @@ export default async function NewGoodsIssuePage({ params }: PageProps) {
           name: i.name,
           unitCode: i.unit.code,
           barcode: i.barcode,
+          tracksBatch: i.tracksBatch,
+          batches: i.batches
+            .map((b) => ({
+              id: b.id,
+              batchCode: b.batchCode,
+              expiryDate: b.expiryDate ? b.expiryDate.toISOString() : null,
+              onHand: onHandByBatch.get(b.id) ?? 0,
+            }))
+            .filter((b) => b.onHand > 0),
         }))}
         defaultWarehouseId={defaultWarehouse?.id}
         action={createGoodsIssueAction}
