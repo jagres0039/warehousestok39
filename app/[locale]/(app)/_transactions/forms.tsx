@@ -11,12 +11,24 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { BarcodeScanner } from "@/components/barcode/barcode-scanner";
 import type { ActionResult } from "@/lib/transaction-schemas";
 
+export interface BatchOption {
+  id: string;
+  batchCode: string;
+  expiryDate: string | null; // ISO date or null
+  // On-hand at the source warehouse (for Issue/Adjustment/Transfer pickers).
+  // Receipt forms ignore this and let users pick any active batch.
+  onHand?: number;
+}
+
 export interface ItemOption {
   id: string;
   sku: string;
   name: string;
   unitCode: string;
   barcode: string | null;
+  tracksBatch?: boolean;
+  // Existing active batches for this item, sorted FEFO when used by Issue.
+  batches?: BatchOption[];
 }
 
 // Match a scanned/typed code against the item list. Barcode wins over SKU,
@@ -39,6 +51,107 @@ interface ItemPickerProps {
   noItemsLabel: string;
   scanLabel: string;
   onOpenScan: () => void;
+}
+
+interface BatchPickerProps {
+  value: string; // batchId
+  onChange: (id: string) => void;
+  batches: BatchOption[];
+  required: boolean;
+  placeholder: string;
+  showOnHand?: boolean;
+}
+
+function BatchPicker({ value, onChange, batches, required, placeholder, showOnHand }: BatchPickerProps) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="h-9 w-full rounded-md border border-border bg-background px-2 text-sm"
+      required={required}
+    >
+      <option value="">{placeholder}</option>
+      {batches.map((b) => {
+        const expiry = b.expiryDate ? new Date(b.expiryDate).toISOString().slice(0, 10) : null;
+        const onHandLabel = showOnHand && b.onHand != null ? ` · ${b.onHand}` : "";
+        const expiryLabel = expiry ? ` · exp ${expiry}` : "";
+        return (
+          <option key={b.id} value={b.id}>
+            {b.batchCode}
+            {expiryLabel}
+            {onHandLabel}
+          </option>
+        );
+      })}
+    </select>
+  );
+}
+
+interface ReceiptBatchCellProps {
+  mode: "existing" | "new";
+  batchId: string;
+  newBatchCode: string;
+  newBatchExpiry: string;
+  batches: BatchOption[];
+  onModeChange: (m: "existing" | "new") => void;
+  onBatchIdChange: (id: string) => void;
+  onNewCodeChange: (s: string) => void;
+  onNewExpiryChange: (s: string) => void;
+  selectExistingLabel: string;
+  newBatchLabel: string;
+  batchCodeLabel: string;
+  expiryLabel: string;
+  pickBatchLabel: string;
+}
+
+function ReceiptBatchCell(props: ReceiptBatchCellProps) {
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <label className="inline-flex items-center gap-1">
+          <input
+            type="radio"
+            checked={props.mode === "existing"}
+            onChange={() => props.onModeChange("existing")}
+          />
+          {props.selectExistingLabel}
+        </label>
+        <label className="inline-flex items-center gap-1">
+          <input
+            type="radio"
+            checked={props.mode === "new"}
+            onChange={() => props.onModeChange("new")}
+          />
+          {props.newBatchLabel}
+        </label>
+      </div>
+      {props.mode === "existing" ? (
+        <BatchPicker
+          value={props.batchId}
+          onChange={props.onBatchIdChange}
+          batches={props.batches}
+          required
+          placeholder={props.pickBatchLabel}
+        />
+      ) : (
+        <div className="grid grid-cols-2 gap-1">
+          <Input
+            value={props.newBatchCode}
+            onChange={(e) => props.onNewCodeChange(e.target.value)}
+            placeholder={props.batchCodeLabel}
+            required
+          />
+          <Input
+            type="date"
+            value={props.newBatchExpiry}
+            onChange={(e) => props.onNewExpiryChange(e.target.value)}
+            placeholder={props.expiryLabel}
+            title={props.expiryLabel}
+          />
+        </div>
+      )}
+    </div>
+  );
 }
 
 function ItemPicker({ value, onChange, items, noItemsLabel, scanLabel, onOpenScan }: ItemPickerProps) {
@@ -90,6 +203,11 @@ interface ReceiptLineState {
   itemId: string;
   qty: string;
   note: string;
+  // Batch fields. Used only when the chosen item.tracksBatch === true.
+  batchMode: "existing" | "new";
+  batchId: string;
+  newBatchCode: string;
+  newBatchExpiry: string;
 }
 
 let nextUid = 1;
@@ -125,9 +243,17 @@ export function GoodsReceiptForm({
   const tCommon = useTranslations("common");
   const tMaster = useTranslations("masterData");
 
-  const [lines, setLines] = useState<ReceiptLineState[]>([
-    { uid: makeUid(), itemId: items[0]?.id ?? "", qty: "", note: "" },
-  ]);
+  const blankLine = (): ReceiptLineState => ({
+    uid: makeUid(),
+    itemId: items[0]?.id ?? "",
+    qty: "",
+    note: "",
+    batchMode: "new",
+    batchId: "",
+    newBatchCode: "",
+    newBatchExpiry: "",
+  });
+  const [lines, setLines] = useState<ReceiptLineState[]>([blankLine()]);
   const [scanningUid, setScanningUid] = useState<string | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
   const [state, formAction] = useActionState<ActionResult | undefined, FormData>(
@@ -139,8 +265,7 @@ export function GoodsReceiptForm({
     setLines((prev) => prev.map((l) => (l.uid === uid ? { ...l, ...patch } : l)));
   const removeLine = (uid: string) =>
     setLines((prev) => (prev.length === 1 ? prev : prev.filter((l) => l.uid !== uid)));
-  const addLine = () =>
-    setLines((prev) => [...prev, { uid: makeUid(), itemId: items[0]?.id ?? "", qty: "", note: "" }]);
+  const addLine = () => setLines((prev) => [...prev, blankLine()]);
   const handleScanResult = useCallback(
     (code: string) => {
       const match = findItemByCode(items, code);
@@ -155,8 +280,29 @@ export function GoodsReceiptForm({
     [items, scanningUid],
   );
 
+  const itemById = new Map(items.map((it) => [it.id, it]));
+  const anyTracksBatch = items.some((it) => it.tracksBatch);
+
   const linesPayload = JSON.stringify(
-    lines.map((l) => ({ itemId: l.itemId, qty: l.qty, note: l.note })),
+    lines.map((l) => {
+      const item = itemById.get(l.itemId);
+      const tracks = !!item?.tracksBatch;
+      if (!tracks) {
+        return { itemId: l.itemId, qty: l.qty, note: l.note };
+      }
+      if (l.batchMode === "existing") {
+        return { itemId: l.itemId, batchId: l.batchId, qty: l.qty, note: l.note };
+      }
+      return {
+        itemId: l.itemId,
+        qty: l.qty,
+        note: l.note,
+        newBatch: {
+          batchCode: l.newBatchCode,
+          expiryDate: l.newBatchExpiry || null,
+        },
+      };
+    }),
   );
 
   return (
@@ -247,13 +393,17 @@ export function GoodsReceiptForm({
                 <thead className="bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="px-3 py-2">{t("item")}</th>
+                    {anyTracksBatch && <th className="w-72 px-3 py-2">{t("batch")}</th>}
                     <th className="w-32 px-3 py-2">{t("qty")}</th>
                     <th className="px-3 py-2">{t("lineNote")}</th>
                     <th className="w-10 px-3 py-2" />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {lines.map((l) => (
+                  {lines.map((l) => {
+                    const item = itemById.get(l.itemId);
+                    const tracks = !!item?.tracksBatch;
+                    return (
                     <tr key={l.uid}>
                       <td className="px-3 py-2">
                         <ItemPicker
@@ -268,6 +418,30 @@ export function GoodsReceiptForm({
                           }}
                         />
                       </td>
+                      {anyTracksBatch && (
+                        <td className="px-3 py-2">
+                          {tracks ? (
+                            <ReceiptBatchCell
+                              mode={l.batchMode}
+                              batchId={l.batchId}
+                              newBatchCode={l.newBatchCode}
+                              newBatchExpiry={l.newBatchExpiry}
+                              batches={item?.batches ?? []}
+                              onModeChange={(m) => updateLine(l.uid, { batchMode: m })}
+                              onBatchIdChange={(id) => updateLine(l.uid, { batchId: id })}
+                              onNewCodeChange={(s) => updateLine(l.uid, { newBatchCode: s })}
+                              onNewExpiryChange={(s) => updateLine(l.uid, { newBatchExpiry: s })}
+                              selectExistingLabel={t("batchExisting")}
+                              newBatchLabel={t("batchNew")}
+                              batchCodeLabel={t("batchCode")}
+                              expiryLabel={t("expiryDate")}
+                              pickBatchLabel={t("pickBatch")}
+                            />
+                          ) : (
+                            <span className="text-xs text-muted-foreground">{t("noBatch")}</span>
+                          )}
+                        </td>
+                      )}
                       <td className="px-3 py-2">
                         <Input
                           value={l.qty}
@@ -294,10 +468,17 @@ export function GoodsReceiptForm({
                         </button>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
+            {state?.error === "BATCH_REQUIRED" && (
+              <p className="text-sm text-destructive">{t("errBatchRequired")}</p>
+            )}
+            {state?.error === "BATCH_NOT_ALLOWED" && (
+              <p className="text-sm text-destructive">{t("errBatchNotAllowed")}</p>
+            )}
             {scanError && (
               <p className="text-sm text-destructive">
                 {t("scanNoMatch", { code: scanError })}
@@ -343,9 +524,17 @@ export function GoodsIssueForm({
   const tCommon = useTranslations("common");
   const tMaster = useTranslations("masterData");
 
-  const [lines, setLines] = useState<ReceiptLineState[]>([
-    { uid: makeUid(), itemId: items[0]?.id ?? "", qty: "", note: "" },
-  ]);
+  const blankLine = (): ReceiptLineState => ({
+    uid: makeUid(),
+    itemId: items[0]?.id ?? "",
+    qty: "",
+    note: "",
+    batchMode: "existing",
+    batchId: "",
+    newBatchCode: "",
+    newBatchExpiry: "",
+  });
+  const [lines, setLines] = useState<ReceiptLineState[]>([blankLine()]);
   const [scanningUid, setScanningUid] = useState<string | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
   const [state, formAction] = useActionState<ActionResult | undefined, FormData>(
@@ -357,8 +546,7 @@ export function GoodsIssueForm({
     setLines((prev) => prev.map((l) => (l.uid === uid ? { ...l, ...patch } : l)));
   const removeLine = (uid: string) =>
     setLines((prev) => (prev.length === 1 ? prev : prev.filter((l) => l.uid !== uid)));
-  const addLine = () =>
-    setLines((prev) => [...prev, { uid: makeUid(), itemId: items[0]?.id ?? "", qty: "", note: "" }]);
+  const addLine = () => setLines((prev) => [...prev, blankLine()]);
   const handleScanResult = useCallback(
     (code: string) => {
       const match = findItemByCode(items, code);
@@ -373,8 +561,16 @@ export function GoodsIssueForm({
     [items, scanningUid],
   );
 
+  const itemById = new Map(items.map((it) => [it.id, it]));
+  const anyTracksBatch = items.some((it) => it.tracksBatch);
+
   const linesPayload = JSON.stringify(
-    lines.map((l) => ({ itemId: l.itemId, qty: l.qty, note: l.note })),
+    lines.map((l) => {
+      const item = itemById.get(l.itemId);
+      const tracks = !!item?.tracksBatch;
+      if (!tracks) return { itemId: l.itemId, qty: l.qty, note: l.note };
+      return { itemId: l.itemId, batchId: l.batchId, qty: l.qty, note: l.note };
+    }),
   );
 
   return (
@@ -468,13 +664,17 @@ export function GoodsIssueForm({
                 <thead className="bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="px-3 py-2">{t("item")}</th>
+                    {anyTracksBatch && <th className="w-56 px-3 py-2">{t("batch")}</th>}
                     <th className="w-32 px-3 py-2">{t("qty")}</th>
                     <th className="px-3 py-2">{t("lineNote")}</th>
                     <th className="w-10 px-3 py-2" />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {lines.map((l) => (
+                  {lines.map((l) => {
+                    const item = itemById.get(l.itemId);
+                    const tracks = !!item?.tracksBatch;
+                    return (
                     <tr key={l.uid}>
                       <td className="px-3 py-2">
                         <ItemPicker
@@ -489,6 +689,22 @@ export function GoodsIssueForm({
                           }}
                         />
                       </td>
+                      {anyTracksBatch && (
+                        <td className="px-3 py-2">
+                          {tracks ? (
+                            <BatchPicker
+                              value={l.batchId}
+                              onChange={(id) => updateLine(l.uid, { batchId: id })}
+                              batches={item?.batches ?? []}
+                              required
+                              placeholder={t("pickBatch")}
+                              showOnHand
+                            />
+                          ) : (
+                            <span className="text-xs text-muted-foreground">{t("noBatch")}</span>
+                          )}
+                        </td>
+                      )}
                       <td className="px-3 py-2">
                         <Input
                           value={l.qty}
@@ -515,10 +731,17 @@ export function GoodsIssueForm({
                         </button>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
+            {state?.error === "BATCH_REQUIRED" && (
+              <p className="text-sm text-destructive">{t("errBatchRequired")}</p>
+            )}
+            {state?.error === "BATCH_NOT_ALLOWED" && (
+              <p className="text-sm text-destructive">{t("errBatchNotAllowed")}</p>
+            )}
             {scanError && (
               <p className="text-sm text-destructive">
                 {t("scanNoMatch", { code: scanError })}
@@ -554,6 +777,7 @@ interface AdjustmentLineState {
   direction: "IN" | "OUT";
   qty: string;
   note: string;
+  batchId: string;
 }
 
 interface AdjustmentFormProps {
@@ -577,9 +801,15 @@ export function StockAdjustmentForm({
   const t = useTranslations("transactions");
   const tCommon = useTranslations("common");
 
-  const [lines, setLines] = useState<AdjustmentLineState[]>([
-    { uid: makeUid(), itemId: items[0]?.id ?? "", direction: "IN", qty: "", note: "" },
-  ]);
+  const blankLine = (): AdjustmentLineState => ({
+    uid: makeUid(),
+    itemId: items[0]?.id ?? "",
+    direction: "IN",
+    qty: "",
+    note: "",
+    batchId: "",
+  });
+  const [lines, setLines] = useState<AdjustmentLineState[]>([blankLine()]);
   const [scanningUid, setScanningUid] = useState<string | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
   const [state, formAction] = useActionState<ActionResult | undefined, FormData>(
@@ -591,11 +821,7 @@ export function StockAdjustmentForm({
     setLines((prev) => prev.map((l) => (l.uid === uid ? { ...l, ...patch } : l)));
   const removeLine = (uid: string) =>
     setLines((prev) => (prev.length === 1 ? prev : prev.filter((l) => l.uid !== uid)));
-  const addLine = () =>
-    setLines((prev) => [
-      ...prev,
-      { uid: makeUid(), itemId: items[0]?.id ?? "", direction: "IN", qty: "", note: "" },
-    ]);
+  const addLine = () => setLines((prev) => [...prev, blankLine()]);
   const handleScanResult = useCallback(
     (code: string) => {
       const match = findItemByCode(items, code);
@@ -610,13 +836,29 @@ export function StockAdjustmentForm({
     [items, scanningUid],
   );
 
+  const itemById = new Map(items.map((it) => [it.id, it]));
+  const anyTracksBatch = items.some((it) => it.tracksBatch);
+
   const linesPayload = JSON.stringify(
-    lines.map((l) => ({
-      itemId: l.itemId,
-      direction: l.direction,
-      qty: l.qty,
-      note: l.note,
-    })),
+    lines.map((l) => {
+      const item = itemById.get(l.itemId);
+      const tracks = !!item?.tracksBatch;
+      if (!tracks) {
+        return {
+          itemId: l.itemId,
+          direction: l.direction,
+          qty: l.qty,
+          note: l.note,
+        };
+      }
+      return {
+        itemId: l.itemId,
+        batchId: l.batchId,
+        direction: l.direction,
+        qty: l.qty,
+        note: l.note,
+      };
+    }),
   );
 
   return (
@@ -691,6 +933,7 @@ export function StockAdjustmentForm({
                 <thead className="bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="px-3 py-2">{t("item")}</th>
+                    {anyTracksBatch && <th className="w-56 px-3 py-2">{t("batch")}</th>}
                     <th className="w-32 px-3 py-2">{t("direction")}</th>
                     <th className="w-28 px-3 py-2">{t("qty")}</th>
                     <th className="px-3 py-2">{t("lineNote")}</th>
@@ -698,7 +941,10 @@ export function StockAdjustmentForm({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {lines.map((l) => (
+                  {lines.map((l) => {
+                    const item = itemById.get(l.itemId);
+                    const tracks = !!item?.tracksBatch;
+                    return (
                     <tr key={l.uid}>
                       <td className="px-3 py-2">
                         <ItemPicker
@@ -713,6 +959,22 @@ export function StockAdjustmentForm({
                           }}
                         />
                       </td>
+                      {anyTracksBatch && (
+                        <td className="px-3 py-2">
+                          {tracks ? (
+                            <BatchPicker
+                              value={l.batchId}
+                              onChange={(id) => updateLine(l.uid, { batchId: id })}
+                              batches={item?.batches ?? []}
+                              required
+                              placeholder={t("pickBatch")}
+                              showOnHand
+                            />
+                          ) : (
+                            <span className="text-xs text-muted-foreground">{t("noBatch")}</span>
+                          )}
+                        </td>
+                      )}
                       <td className="px-3 py-2">
                         <select
                           value={l.direction}
@@ -753,10 +1015,17 @@ export function StockAdjustmentForm({
                         </button>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
+            {state?.error === "BATCH_REQUIRED" && (
+              <p className="text-sm text-destructive">{t("errBatchRequired")}</p>
+            )}
+            {state?.error === "BATCH_NOT_ALLOWED" && (
+              <p className="text-sm text-destructive">{t("errBatchNotAllowed")}</p>
+            )}
             {scanError && (
               <p className="text-sm text-destructive">
                 {t("scanNoMatch", { code: scanError })}
@@ -810,9 +1079,17 @@ export function StockTransferForm({
   const tCommon = useTranslations("common");
   const tTransfers = useTranslations("transfers");
 
-  const [lines, setLines] = useState<ReceiptLineState[]>([
-    { uid: makeUid(), itemId: items[0]?.id ?? "", qty: "", note: "" },
-  ]);
+  const blankLine = (): ReceiptLineState => ({
+    uid: makeUid(),
+    itemId: items[0]?.id ?? "",
+    qty: "",
+    note: "",
+    batchMode: "existing",
+    batchId: "",
+    newBatchCode: "",
+    newBatchExpiry: "",
+  });
+  const [lines, setLines] = useState<ReceiptLineState[]>([blankLine()]);
   const [scanningUid, setScanningUid] = useState<string | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
   const [state, formAction] = useActionState<ActionResult | undefined, FormData>(
@@ -824,8 +1101,7 @@ export function StockTransferForm({
     setLines((prev) => prev.map((l) => (l.uid === uid ? { ...l, ...patch } : l)));
   const removeLine = (uid: string) =>
     setLines((prev) => (prev.length === 1 ? prev : prev.filter((l) => l.uid !== uid)));
-  const addLine = () =>
-    setLines((prev) => [...prev, { uid: makeUid(), itemId: items[0]?.id ?? "", qty: "", note: "" }]);
+  const addLine = () => setLines((prev) => [...prev, blankLine()]);
   const handleScanResult = useCallback(
     (code: string) => {
       const match = findItemByCode(items, code);
@@ -840,8 +1116,16 @@ export function StockTransferForm({
     [items, scanningUid],
   );
 
+  const itemById = new Map(items.map((it) => [it.id, it]));
+  const anyTracksBatch = items.some((it) => it.tracksBatch);
+
   const linesPayload = JSON.stringify(
-    lines.map((l) => ({ itemId: l.itemId, qty: l.qty, note: l.note })),
+    lines.map((l) => {
+      const item = itemById.get(l.itemId);
+      const tracks = !!item?.tracksBatch;
+      if (!tracks) return { itemId: l.itemId, qty: l.qty, note: l.note };
+      return { itemId: l.itemId, batchId: l.batchId, qty: l.qty, note: l.note };
+    }),
   );
 
   // Pick default destination different from default source. Falls back to the
@@ -947,13 +1231,17 @@ export function StockTransferForm({
                 <thead className="bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="px-3 py-2">{t("item")}</th>
+                    {anyTracksBatch && <th className="w-56 px-3 py-2">{t("batch")}</th>}
                     <th className="w-32 px-3 py-2">{t("qty")}</th>
                     <th className="px-3 py-2">{t("lineNote")}</th>
                     <th className="w-10 px-3 py-2" />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {lines.map((l) => (
+                  {lines.map((l) => {
+                    const item = itemById.get(l.itemId);
+                    const tracks = !!item?.tracksBatch;
+                    return (
                     <tr key={l.uid}>
                       <td className="px-3 py-2">
                         <ItemPicker
@@ -968,6 +1256,22 @@ export function StockTransferForm({
                           }}
                         />
                       </td>
+                      {anyTracksBatch && (
+                        <td className="px-3 py-2">
+                          {tracks ? (
+                            <BatchPicker
+                              value={l.batchId}
+                              onChange={(id) => updateLine(l.uid, { batchId: id })}
+                              batches={item?.batches ?? []}
+                              required
+                              placeholder={t("pickBatch")}
+                              showOnHand
+                            />
+                          ) : (
+                            <span className="text-xs text-muted-foreground">{t("noBatch")}</span>
+                          )}
+                        </td>
+                      )}
                       <td className="px-3 py-2">
                         <Input
                           value={l.qty}
@@ -994,10 +1298,17 @@ export function StockTransferForm({
                         </button>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
+            {state?.error === "BATCH_REQUIRED" && (
+              <p className="text-sm text-destructive">{t("errBatchRequired")}</p>
+            )}
+            {state?.error === "BATCH_NOT_ALLOWED" && (
+              <p className="text-sm text-destructive">{t("errBatchNotAllowed")}</p>
+            )}
             {scanError && (
               <p className="text-sm text-destructive">
                 {t("scanNoMatch", { code: scanError })}

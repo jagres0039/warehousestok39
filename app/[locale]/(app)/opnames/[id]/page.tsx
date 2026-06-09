@@ -35,8 +35,12 @@ export default async function StockOpnameDetailPage({ params }: PageProps) {
               sku: true,
               name: true,
               barcode: true,
+              tracksBatch: true,
               unit: { select: { code: true } },
             },
+          },
+          batch: {
+            select: { batchCode: true, expiryDate: true },
           },
         },
       },
@@ -47,11 +51,16 @@ export default async function StockOpnameDetailPage({ params }: PageProps) {
   const isDraft = opname.status === "DRAFT";
 
   const rows = opname.lines.map((l) => ({
+    lineId: l.id,
     itemId: l.itemId,
+    batchId: l.batchId,
     sku: l.item.sku,
     name: l.item.name,
     unitCode: l.item.unit.code,
     barcode: l.item.barcode,
+    tracksBatch: l.item.tracksBatch,
+    batchCode: l.batch?.batchCode ?? null,
+    expiryDate: l.batch?.expiryDate ? l.batch.expiryDate.toISOString() : null,
     systemQty: String(l.systemQty),
     countedQty: String(l.countedQty),
     varianceQty: String(l.varianceQty),

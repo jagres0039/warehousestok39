@@ -3,6 +3,7 @@ import { setRequestLocale, getTranslations } from "next-intl/server";
 import { requireTenantSession } from "@/lib/session";
 import { assertCanMutate } from "@/lib/role-guard";
 import { prisma } from "@/lib/prisma";
+import { getStockOnHandPerBatch } from "@/lib/inventory";
 import { PageHeader } from "@/components/page-header";
 import { StockTransferForm } from "../../_transactions/forms";
 import { createStockTransferAction } from "../actions";
@@ -30,7 +31,19 @@ export default async function NewStockTransferPage({ params }: PageProps) {
     prisma.item.findMany({
       where: { organizationId: session.organizationId, isActive: true },
       orderBy: { sku: "asc" },
-      select: { id: true, sku: true, name: true, barcode: true, unit: { select: { code: true } } },
+      select: {
+        id: true,
+        sku: true,
+        name: true,
+        barcode: true,
+        tracksBatch: true,
+        unit: { select: { code: true } },
+        batches: {
+          where: { isActive: true },
+          orderBy: [{ expiryDate: "asc" }, { batchCode: "asc" }],
+          select: { id: true, batchCode: true, expiryDate: true },
+        },
+      },
     }),
   ]);
 
@@ -65,6 +78,14 @@ export default async function NewStockTransferPage({ params }: PageProps) {
   const defaultTo =
     warehouses.find((w) => w.id !== defaultFrom.id) ?? warehouses[1]!;
 
+  const onHandRows = await getStockOnHandPerBatch(session.organizationId, {
+    warehouseId: defaultFrom.id,
+  });
+  const onHandByBatch = new Map<string, number>();
+  for (const row of onHandRows) {
+    if (row.batchId) onHandByBatch.set(row.batchId, row.qty);
+  }
+
   return (
     <div className="mx-auto max-w-4xl">
       <StockTransferForm
@@ -76,6 +97,15 @@ export default async function NewStockTransferPage({ params }: PageProps) {
           name: i.name,
           unitCode: i.unit.code,
           barcode: i.barcode,
+          tracksBatch: i.tracksBatch,
+          batches: i.batches
+            .map((b) => ({
+              id: b.id,
+              batchCode: b.batchCode,
+              expiryDate: b.expiryDate ? b.expiryDate.toISOString() : null,
+              onHand: onHandByBatch.get(b.id) ?? 0,
+            }))
+            .filter((b) => b.onHand > 0),
         }))}
         defaultFromWarehouseId={defaultFrom.id}
         defaultToWarehouseId={defaultTo.id}

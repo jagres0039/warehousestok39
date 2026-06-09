@@ -73,6 +73,8 @@ export async function updateOpnameLineAction(
 
   const parsed = opnameLineUpdateSchema.safeParse({
     itemId: String(formData.get("itemId") ?? ""),
+    batchId: String(formData.get("batchId") ?? "") || null,
+    lineId: String(formData.get("lineId") ?? "") || null,
     countedQty: String(formData.get("countedQty") ?? ""),
     note: String(formData.get("note") ?? "") || null,
   });
@@ -88,7 +90,9 @@ export async function updateOpnameLineAction(
     await updateOpnameLine({
       organizationId: session.organizationId,
       opnameId,
+      lineId: parsed.data.lineId ?? undefined,
       itemId: parsed.data.itemId,
+      batchId: parsed.data.batchId,
       countedQty: parsed.data.countedQty,
       note: parsed.data.note ?? null,
     });

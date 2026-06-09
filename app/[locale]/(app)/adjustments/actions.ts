@@ -16,6 +16,7 @@ import {
   cancelSchema,
   type ActionResult,
 } from "@/lib/transaction-schemas";
+import { validateBatchReferences } from "@/lib/batch-helpers";
 
 function parseLines(raw: string): unknown[] {
   try {
@@ -60,6 +61,7 @@ export async function createStockAdjustmentAction(
         success: true;
         data: {
           itemId: string;
+          batchId: string | null;
           direction: "IN" | "OUT";
           qty: number;
           note?: string | null;
@@ -78,7 +80,7 @@ export async function createStockAdjustmentAction(
         id: { in: lines.map((l) => l.itemId) },
         isActive: true,
       },
-      select: { id: true },
+      select: { id: true, tracksBatch: true },
     }),
     prisma.organization.findUnique({
       where: { id: session.organizationId },
@@ -86,10 +88,17 @@ export async function createStockAdjustmentAction(
     }),
   ]);
   if (!wh || !org) return { ok: false, error: "INVALID_REF" };
-  const validItems = new Set(items.map((i) => i.id));
+  const itemsById = new Map(items.map((i) => [i.id, i]));
   for (const line of lines) {
-    if (!validItems.has(line.itemId)) return { ok: false, error: "INVALID_REF" };
+    if (!itemsById.has(line.itemId)) return { ok: false, error: "INVALID_REF" };
   }
+
+  const batchCheck = await validateBatchReferences(
+    session.organizationId,
+    lines,
+    itemsById,
+  );
+  if (!batchCheck.ok) return { ok: false, error: batchCheck.error };
 
   try {
     await postStockAdjustment({
@@ -101,6 +110,7 @@ export async function createStockAdjustmentAction(
       reason: header.data.reason ?? undefined,
       lines: lines.map((l) => ({
         itemId: l.itemId,
+        batchId: l.batchId,
         direction: l.direction,
         qty: l.qty,
         note: l.note ?? undefined,
