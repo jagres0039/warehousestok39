@@ -101,11 +101,11 @@ export function SidebarNav({ sections, collapseLabels }: SidebarNavProps) {
         {sections.map((section, idx) => (
           <div key={section.key} className={cn(idx > 0 && "mt-6")}>
             {section.label && !collapsed ? (
-              <h4 className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <h4 className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
                 {section.label}
               </h4>
             ) : null}
-            <ul className="space-y-0.5">
+            <ul className="space-y-1">
               {section.items.map((item) => {
                 const Icon = ICONS[item.key] ?? FileText;
                 const active =
@@ -115,7 +115,7 @@ export function SidebarNav({ sections, collapseLabels }: SidebarNavProps) {
                     <li key={item.key}>
                       <span
                         className={cn(
-                          "flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground/60",
+                          "flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground/50",
                           collapsed && "justify-center px-0",
                         )}
                         title={collapsed ? item.label : undefined}
@@ -131,10 +131,10 @@ export function SidebarNav({ sections, collapseLabels }: SidebarNavProps) {
                     <Link
                       href={item.href}
                       className={cn(
-                        "group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                        "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
                         active
-                          ? "bg-sidebar-accent text-accent-foreground"
-                          : "text-sidebar-foreground hover:bg-muted hover:text-foreground",
+                          ? "bg-accent font-medium text-accent-foreground"
+                          : "text-sidebar-foreground hover:bg-muted/70 hover:text-foreground",
                         collapsed && "justify-center px-0",
                       )}
                       title={collapsed ? item.label : undefined}
@@ -142,13 +142,15 @@ export function SidebarNav({ sections, collapseLabels }: SidebarNavProps) {
                       {active ? (
                         <span
                           aria-hidden
-                          className="absolute inset-y-1 left-0 w-0.5 rounded-r bg-primary"
+                          className="absolute inset-y-1.5 left-0 w-1 rounded-r-full bg-primary"
                         />
                       ) : null}
                       <Icon
                         className={cn(
-                          "size-4 shrink-0",
-                          active ? "text-primary" : "text-muted-foreground group-hover:text-foreground",
+                          "size-4 shrink-0 transition-colors",
+                          active
+                            ? "text-primary"
+                            : "text-muted-foreground group-hover:text-foreground",
                         )}
                         aria-hidden
                       />
@@ -168,7 +170,7 @@ export function SidebarNav({ sections, collapseLabels }: SidebarNavProps) {
           aria-label={collapsed ? collapseLabels.expand : collapseLabels.collapse}
           title={collapsed ? collapseLabels.expand : collapseLabels.collapse}
           className={cn(
-            "flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+            "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground",
             collapsed && "justify-center px-0",
           )}
         >
@@ -259,11 +261,11 @@ export function MobileNav({
               {sections.map((section) => (
                 <div key={section.key}>
                   {section.label ? (
-                    <h4 className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <h4 className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
                       {section.label}
                     </h4>
                   ) : null}
-                  <ul className="space-y-0.5">
+                  <ul className="space-y-1">
                     {section.items.map((item) => {
                       const Icon = ICONS[item.key] ?? FileText;
                       const active =
@@ -272,7 +274,7 @@ export function MobileNav({
                       if (item.disabled) {
                         return (
                           <li key={item.key}>
-                            <span className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground/60">
+                            <span className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground/50">
                               <Icon className="size-4" aria-hidden />
                               {item.label}
                             </span>
@@ -284,13 +286,19 @@ export function MobileNav({
                           <Link
                             href={item.href}
                             className={cn(
-                              "flex items-center gap-3 rounded-md px-3 py-2 text-sm",
+                              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
                               active
-                                ? "bg-accent text-accent-foreground"
-                                : "text-foreground hover:bg-muted",
+                                ? "bg-accent font-medium text-accent-foreground"
+                                : "text-foreground hover:bg-muted/70",
                             )}
                           >
-                            <Icon className="size-4" aria-hidden />
+                            <Icon
+                              className={cn(
+                                "size-4",
+                                active ? "text-primary" : "text-muted-foreground",
+                              )}
+                              aria-hidden
+                            />
                             {item.label}
                           </Link>
                         </li>
@@ -306,4 +314,3 @@ export function MobileNav({
     </>
   );
 }
-

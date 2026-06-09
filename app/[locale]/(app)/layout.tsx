@@ -191,10 +191,10 @@ export default async function AppLayout({ children, params }: LayoutProps) {
       <div className="flex flex-1">
         <SidebarNav
           sections={sections}
-          collapseLabels={{
+          collapseLabels={ {
             collapse: t("collapseSidebar"),
             expand: t("expandSidebar"),
-          }}
+          } }
         />
         <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
           <div className="mx-auto w-full max-w-6xl">{children}</div>
