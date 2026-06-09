@@ -139,11 +139,13 @@ export default async function StockTransfersPage({ params, searchParams }: PageP
               searchParams={sp}
               page={result.page}
               totalPages={result.totalPages}
-              labels=
-                previous: tCommon("previous"),
-                next: tCommon("next"),
-                pageOf: tCommon("pageOf"),
-              
+              labels={
+                {
+                  previous: tCommon("previous"),
+                  next: tCommon("next"),
+                  pageOf: tCommon("pageOf"),
+                }
+              }
             />
           ) : null}
         </div>
