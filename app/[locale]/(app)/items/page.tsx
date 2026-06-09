@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { PackageOpen } from "lucide-react";
 import { requireTenantSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { parsePagination, buildPageResult } from "@/lib/pagination";
@@ -7,6 +8,7 @@ import { canMutate } from "@/lib/role-guard";
 import { PageHeader } from "@/components/page-header";
 import { SearchInput } from "@/components/search-input";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Pagination } from "@/components/ui/pagination";
 
 export const dynamic = "force-dynamic";
@@ -70,28 +72,37 @@ export default async function ItemsListPage({ params, searchParams }: PageProps)
 
       <SearchInput placeholder={t("itemSearchPlaceholder")} />
 
-      <div className="rounded-md border border-border bg-white shadow-sm">
-        <table className="w-full">
-          <thead className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
-            <tr>
-              <th className="px-4 py-3">{t("sku")}</th>
-              <th className="px-4 py-3">{t("name")}</th>
-              <th className="px-4 py-3">{t("category")}</th>
-              <th className="px-4 py-3">{t("unit")}</th>
-              <th className="px-4 py-3 text-right">{t("minStock")}</th>
-              <th className="px-4 py-3">{t("status")}</th>
-              <th className="px-4 py-3 text-right">{tCommon("actions")}</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border text-sm">
-            {result.rows.length === 0 ? (
+      {result.rows.length === 0 ? (
+        q ? (
+          <EmptyState icon={PackageOpen} title={tCommon("noResults")} />
+        ) : (
+          <EmptyState
+            icon={PackageOpen}
+            title={t("itemsTitle")}
+            description={t("itemsDescription")}
+            action={
+              canMutate(session.role)
+                ? { label: t("itemCreateAction"), href: `/${locale}/items/new` }
+                : undefined
+            }
+          />
+        )
+      ) : (
+        <div className="rounded-md border border-border bg-card shadow-sm">
+          <table className="w-full">
+            <thead className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
-                  {tCommon("noResults")}
-                </td>
+                <th className="px-4 py-3">{t("sku")}</th>
+                <th className="px-4 py-3">{t("name")}</th>
+                <th className="px-4 py-3">{t("category")}</th>
+                <th className="px-4 py-3">{t("unit")}</th>
+                <th className="px-4 py-3 text-right">{t("minStock")}</th>
+                <th className="px-4 py-3">{t("status")}</th>
+                <th className="px-4 py-3 text-right">{tCommon("actions")}</th>
               </tr>
-            ) : (
-              result.rows.map((i) => (
+            </thead>
+            <tbody className="divide-y divide-border text-sm">
+              {result.rows.map((i) => (
                 <tr key={i.id} className="hover:bg-muted/40">
                   <td className="px-4 py-3 font-mono text-xs uppercase">{i.sku}</td>
                   <td className="px-4 py-3 font-medium">{i.name}</td>
@@ -130,24 +141,24 @@ export default async function ItemsListPage({ params, searchParams }: PageProps)
                     </div>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-        {result.totalPages > 1 ? (
-          <Pagination
-            basePath={`/${locale}/items`}
-            searchParams={sp}
-            page={result.page}
-            totalPages={result.totalPages}
-            labels={{
-              previous: tCommon("previous"),
-              next: tCommon("next"),
-              pageOf: tCommon("pageOf"),
-            }}
-          />
-        ) : null}
-      </div>
+              ))}
+            </tbody>
+          </table>
+          {result.totalPages > 1 ? (
+            <Pagination
+              basePath={`/${locale}/items`}
+              searchParams={sp}
+              page={result.page}
+              totalPages={result.totalPages}
+              labels=
+                previous: tCommon("previous"),
+                next: tCommon("next"),
+                pageOf: tCommon("pageOf"),
+              
+            />
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }
