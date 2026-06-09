@@ -3,32 +3,32 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors",
+  "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors",
   {
     variants: {
       variant: {
         neutral:
-          "border-border bg-muted text-foreground",
+          "bg-muted text-foreground ring-1 ring-inset ring-border",
         muted:
-          "border-transparent bg-muted text-muted-foreground",
+          "bg-muted text-muted-foreground",
         success:
-          "border-transparent bg-success/10 text-success",
+          "bg-success/10 text-success ring-1 ring-inset ring-success/20",
         warning:
-          "border-transparent bg-warning/15 text-warning-foreground",
+          "bg-warning/15 text-warning-foreground ring-1 ring-inset ring-warning/30",
         destructive:
-          "border-transparent bg-destructive/10 text-destructive",
+          "bg-destructive/10 text-destructive ring-1 ring-inset ring-destructive/20",
         info:
-          "border-transparent bg-accent text-accent-foreground",
+          "bg-accent text-accent-foreground ring-1 ring-inset ring-primary/15",
         outline:
-          "border-border text-foreground",
+          "text-foreground ring-1 ring-inset ring-border",
         owner:
-          "border-transparent bg-success/10 text-success",
+          "bg-success/10 text-success ring-1 ring-inset ring-success/20",
         admin:
-          "border-transparent bg-accent text-accent-foreground",
+          "bg-accent text-accent-foreground ring-1 ring-inset ring-primary/15",
         operator:
-          "border-transparent bg-muted text-foreground",
+          "bg-muted text-foreground ring-1 ring-inset ring-border",
         viewer:
-          "border-transparent bg-muted text-muted-foreground",
+          "bg-muted text-muted-foreground",
       },
     },
     defaultVariants: {
