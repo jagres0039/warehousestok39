@@ -1,6 +1,7 @@
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
+  ArrowUpRight,
   Boxes,
   ListChecks,
   Sparkles,
@@ -168,6 +169,7 @@ export default async function DashboardPage({ params }: PageProps) {
           tone="warning"
           sparkline={null}
           delta={null}
+          href={`/${locale}/reports/low-stock`}
         />
       </section>
 
@@ -300,6 +302,7 @@ interface KpiCardProps {
   tone: "primary" | "success" | "warning";
   sparkline: React.ReactNode;
   delta: number | null;
+  href?: string;
 }
 
 function KpiCard({
@@ -310,6 +313,7 @@ function KpiCard({
   tone,
   sparkline,
   delta,
+  href,
 }: KpiCardProps) {
   const toneClass = {
     primary: "bg-accent text-accent-foreground",
@@ -317,8 +321,8 @@ function KpiCard({
     warning: "bg-warning/15 text-warning-foreground",
   }[tone];
 
-  return (
-    <Card className="overflow-hidden transition-shadow hover:shadow-elevated">
+  const card = (
+    <Card className="h-full overflow-hidden transition-shadow hover:shadow-elevated">
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
         <div>
           <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -339,28 +343,45 @@ function KpiCard({
         </span>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-semibold tabular-nums">{value}</span>
-          {delta !== null ? (
-            <span
-              className={cn(
-                "text-xs font-medium",
-                delta > 0
-                  ? "text-success"
-                  : delta < 0
-                  ? "text-destructive"
-                  : "text-muted-foreground",
-              )}
-            >
-              {delta > 0 ? "+" : ""}
-              {delta}
-            </span>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-semibold tabular-nums">{value}</span>
+            {delta !== null ? (
+              <span
+                className={cn(
+                  "text-xs font-medium",
+                  delta > 0
+                    ? "text-success"
+                    : delta < 0
+                    ? "text-destructive"
+                    : "text-muted-foreground",
+                )}
+              >
+                {delta > 0 ? "+" : ""}
+                {delta}
+              </span>
+            ) : null}
+          </div>
+          {href ? (
+            <ArrowUpRight
+              className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary"
+              aria-hidden
+            />
           ) : null}
         </div>
         {sparkline ? <div className="h-10 w-full">{sparkline}</div> : null}
       </CardContent>
     </Card>
   );
+
+  if (href) {
+    return (
+      <Link href={href} className="group block rounded-xl">
+        {card}
+      </Link>
+    );
+  }
+  return card;
 }
 
 function SummaryTile({
