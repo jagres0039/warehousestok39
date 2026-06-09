@@ -12,6 +12,7 @@ import { setRequestLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { requireTenantSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { getLowStockReport } from "@/lib/reports";
 import { cn } from "@/lib/utils";
 import {
   Card,
@@ -59,6 +60,7 @@ export default async function DashboardPage({ params }: PageProps) {
     teamSize,
     todayMovements,
     windowEntries,
+    lowStockRows,
   ] = await Promise.all([
     prisma.item.count({
       where: { organizationId: session.organizationId, isActive: true },
@@ -91,6 +93,7 @@ export default async function DashboardPage({ params }: PageProps) {
       },
       select: { occurredAt: true, qtyDelta: true },
     }),
+    getLowStockReport(session.organizationId),
   ]);
 
   const buckets = buildBuckets(windowEntries, startWindow, SPARK_DAYS);
@@ -161,7 +164,7 @@ export default async function DashboardPage({ params }: PageProps) {
           icon={ListChecks}
           label={t("metricLowStockTitle")}
           description={t("metricLowStockDescription")}
-          value="0"
+          value={lowStockRows.length.toLocaleString()}
           tone="warning"
           sparkline={null}
           delta={null}
