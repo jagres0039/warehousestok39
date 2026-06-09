@@ -99,7 +99,9 @@ export default async function HomePage({ params }: PageProps) {
               {tApp("tagline")}
             </span>
             <h1 className="mt-6 text-balance text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl">
-              {t("headline")}
+              <span className="bg-gradient-to-br from-foreground to-foreground/65 bg-clip-text text-transparent">
+                {t("headline")}
+              </span>
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-balance text-base text-muted-foreground sm:text-lg">
               {t("subhead")}
@@ -139,7 +141,7 @@ export default async function HomePage({ params }: PageProps) {
                 key={f.title}
                 className="group rounded-xl border border-border bg-card p-6 shadow-soft transition-shadow hover:shadow-elevated"
               >
-                <div className="mb-4 inline-flex size-10 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+                <div className="mb-4 inline-flex size-10 items-center justify-center rounded-lg bg-accent text-accent-foreground ring-1 ring-inset ring-primary/10">
                   <f.icon className="size-5" aria-hidden />
                 </div>
                 <h3 className="text-base font-semibold tracking-tight">

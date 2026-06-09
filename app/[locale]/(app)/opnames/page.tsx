@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { ClipboardList } from "lucide-react";
 import { requireTenantSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { parsePagination, buildPageResult } from "@/lib/pagination";
@@ -7,6 +8,7 @@ import { canMutate } from "@/lib/role-guard";
 import { PageHeader } from "@/components/page-header";
 import { SearchInput } from "@/components/search-input";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Pagination } from "@/components/ui/pagination";
 
 export const dynamic = "force-dynamic";
@@ -70,27 +72,36 @@ export default async function StockOpnamesPage({ params, searchParams }: PagePro
 
       <SearchInput placeholder={t("searchPlaceholder")} />
 
-      <div className="rounded-md border border-border bg-card shadow-sm">
-        <table className="w-full">
-          <thead className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
-            <tr>
-              <th className="px-4 py-3">{tTx("docNo")}</th>
-              <th className="px-4 py-3">{tTx("occurredAt")}</th>
-              <th className="px-4 py-3">{tTx("warehouse")}</th>
-              <th className="px-4 py-3 text-right">{tTx("lineCount")}</th>
-              <th className="px-4 py-3">{tTx("status")}</th>
-              <th className="px-4 py-3 text-right">{tCommon("actions")}</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border text-sm">
-            {result.rows.length === 0 ? (
+      {result.rows.length === 0 ? (
+        q ? (
+          <EmptyState icon={ClipboardList} title={tCommon("noResults")} />
+        ) : (
+          <EmptyState
+            icon={ClipboardList}
+            title={t("listTitle")}
+            description={t("listDescription")}
+            action={
+              canMutate(session.role)
+                ? { label: t("createAction"), href: `/${locale}/opnames/new` }
+                : undefined
+            }
+          />
+        )
+      ) : (
+        <div className="rounded-md border border-border bg-card shadow-sm">
+          <table className="w-full">
+            <thead className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
               <tr>
-                <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
-                  {tCommon("noResults")}
-                </td>
+                <th className="px-4 py-3">{tTx("docNo")}</th>
+                <th className="px-4 py-3">{tTx("occurredAt")}</th>
+                <th className="px-4 py-3">{tTx("warehouse")}</th>
+                <th className="px-4 py-3 text-right">{tTx("lineCount")}</th>
+                <th className="px-4 py-3">{tTx("status")}</th>
+                <th className="px-4 py-3 text-right">{tCommon("actions")}</th>
               </tr>
-            ) : (
-              result.rows.map((r) => (
+            </thead>
+            <tbody className="divide-y divide-border text-sm">
+              {result.rows.map((r) => (
                 <tr key={r.id} className="hover:bg-muted/40">
                   <td className="px-4 py-3 font-mono text-xs">{r.docNo}</td>
                   <td className="px-4 py-3 text-muted-foreground">
@@ -110,24 +121,26 @@ export default async function StockOpnamesPage({ params, searchParams }: PagePro
                     </Link>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-        {result.totalPages > 1 ? (
-          <Pagination
-            basePath={`/${locale}/opnames`}
-            searchParams={sp}
-            page={result.page}
-            totalPages={result.totalPages}
-            labels={{
-              previous: tCommon("previous"),
-              next: tCommon("next"),
-              pageOf: tCommon("pageOf"),
-            }}
-          />
-        ) : null}
-      </div>
+              ))}
+            </tbody>
+          </table>
+          {result.totalPages > 1 ? (
+            <Pagination
+              basePath={`/${locale}/opnames`}
+              searchParams={sp}
+              page={result.page}
+              totalPages={result.totalPages}
+              labels={
+                {
+                  previous: tCommon("previous"),
+                  next: tCommon("next"),
+                  pageOf: tCommon("pageOf"),
+                }
+              }
+            />
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }
