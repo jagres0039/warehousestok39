@@ -61,14 +61,14 @@ export function Dialog({
       <button
         type="button"
         aria-label={closeLabel}
-        className="absolute inset-0 cursor-default bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 cursor-default bg-foreground/40 backdrop-blur-sm"
         onClick={() => {
           if (dismissible) onClose();
         }}
       />
       <div
         className={cn(
-          "relative z-10 w-full max-w-lg rounded-xl border border-border bg-card text-card-foreground shadow-elevated",
+          "relative z-10 w-full max-w-lg animate-fade-in rounded-xl border border-border bg-card text-card-foreground shadow-elevated",
           className,
         )}
       >
