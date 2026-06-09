@@ -130,11 +130,13 @@ export default async function StockOpnamesPage({ params, searchParams }: PagePro
               searchParams={sp}
               page={result.page}
               totalPages={result.totalPages}
-              labels=
-                previous: tCommon("previous"),
-                next: tCommon("next"),
-                pageOf: tCommon("pageOf"),
-              
+              labels={
+                {
+                  previous: tCommon("previous"),
+                  next: tCommon("next"),
+                  pageOf: tCommon("pageOf"),
+                }
+              }
             />
           ) : null}
         </div>

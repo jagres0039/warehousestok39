@@ -150,11 +150,13 @@ export default async function ItemsListPage({ params, searchParams }: PageProps)
               searchParams={sp}
               page={result.page}
               totalPages={result.totalPages}
-              labels=
-                previous: tCommon("previous"),
-                next: tCommon("next"),
-                pageOf: tCommon("pageOf"),
-              
+              labels={
+                {
+                  previous: tCommon("previous"),
+                  next: tCommon("next"),
+                  pageOf: tCommon("pageOf"),
+                }
+              }
             />
           ) : null}
         </div>
