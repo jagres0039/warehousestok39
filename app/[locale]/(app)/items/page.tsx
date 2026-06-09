@@ -122,14 +122,6 @@ export default async function ItemsListPage({ params, searchParams }: PageProps)
                       >
                         {tCommon("stockCard")}
                       </Link>
-                      {i.tracksBatch ? (
-                        <Link
-                          href={`/${locale}/items/${i.id}/batches`}
-                          className="text-sm font-medium text-primary hover:underline"
-                        >
-                          {tCommon("viewBatches")}
-                        </Link>
-                      ) : null}
                       <a
                         href={`/api/print/item-label/${i.id}?locale=${locale}`}
                         target="_blank"
