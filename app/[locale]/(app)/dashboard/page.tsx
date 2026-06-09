@@ -1,6 +1,7 @@
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
+  ArrowUpRight,
   Boxes,
   ListChecks,
   Sparkles,
@@ -12,6 +13,7 @@ import { setRequestLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
 import { requireTenantSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { getLowStockReport } from "@/lib/reports";
 import { cn } from "@/lib/utils";
 import {
   Card,
@@ -59,6 +61,7 @@ export default async function DashboardPage({ params }: PageProps) {
     teamSize,
     todayMovements,
     windowEntries,
+    lowStockRows,
   ] = await Promise.all([
     prisma.item.count({
       where: { organizationId: session.organizationId, isActive: true },
@@ -91,6 +94,7 @@ export default async function DashboardPage({ params }: PageProps) {
       },
       select: { occurredAt: true, qtyDelta: true },
     }),
+    getLowStockReport(session.organizationId),
   ]);
 
   const buckets = buildBuckets(windowEntries, startWindow, SPARK_DAYS);
@@ -161,10 +165,11 @@ export default async function DashboardPage({ params }: PageProps) {
           icon={ListChecks}
           label={t("metricLowStockTitle")}
           description={t("metricLowStockDescription")}
-          value="0"
+          value={lowStockRows.length.toLocaleString()}
           tone="warning"
           sparkline={null}
           delta={null}
+          href={`/${locale}/reports/low-stock`}
         />
       </section>
 
@@ -220,7 +225,17 @@ export default async function DashboardPage({ params }: PageProps) {
                 </p>
               </div>
             </div>
-            <DualSparkline buckets={buckets} className="mt-6" />
+            <div className="mt-6 flex items-center gap-4 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="size-2.5 rounded-sm bg-success" aria-hidden />
+                {t("inboundLabel")}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="size-2.5 rounded-sm bg-destructive" aria-hidden />
+                {t("outboundLabel")}
+              </span>
+            </div>
+            <MovementBarChart buckets={buckets} className="mt-3" />
           </CardContent>
         </Card>
 
@@ -287,6 +302,7 @@ interface KpiCardProps {
   tone: "primary" | "success" | "warning";
   sparkline: React.ReactNode;
   delta: number | null;
+  href?: string;
 }
 
 function KpiCard({
@@ -297,6 +313,7 @@ function KpiCard({
   tone,
   sparkline,
   delta,
+  href,
 }: KpiCardProps) {
   const toneClass = {
     primary: "bg-accent text-accent-foreground",
@@ -304,8 +321,8 @@ function KpiCard({
     warning: "bg-warning/15 text-warning-foreground",
   }[tone];
 
-  return (
-    <Card className="overflow-hidden">
+  const card = (
+    <Card className="h-full overflow-hidden transition-shadow hover:shadow-elevated">
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
         <div>
           <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -326,28 +343,45 @@ function KpiCard({
         </span>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-semibold tabular-nums">{value}</span>
-          {delta !== null ? (
-            <span
-              className={cn(
-                "text-xs font-medium",
-                delta > 0
-                  ? "text-success"
-                  : delta < 0
-                  ? "text-destructive"
-                  : "text-muted-foreground",
-              )}
-            >
-              {delta > 0 ? "+" : ""}
-              {delta}
-            </span>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-semibold tabular-nums">{value}</span>
+            {delta !== null ? (
+              <span
+                className={cn(
+                  "text-xs font-medium",
+                  delta > 0
+                    ? "text-success"
+                    : delta < 0
+                    ? "text-destructive"
+                    : "text-muted-foreground",
+                )}
+              >
+                {delta > 0 ? "+" : ""}
+                {delta}
+              </span>
+            ) : null}
+          </div>
+          {href ? (
+            <ArrowUpRight
+              className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary"
+              aria-hidden
+            />
           ) : null}
         </div>
         {sparkline ? <div className="h-10 w-full">{sparkline}</div> : null}
       </CardContent>
     </Card>
   );
+
+  if (href) {
+    return (
+      <Link href={href} className="group block rounded-xl">
+        {card}
+      </Link>
+    );
+  }
+  return card;
 }
 
 function SummaryTile({
@@ -360,7 +394,7 @@ function SummaryTile({
   value: number;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-4 shadow-soft">
+    <div className="rounded-xl border border-border bg-card p-4 shadow-soft transition-shadow hover:shadow-elevated">
       <div className="flex items-center justify-between">
         <span className="text-xs uppercase tracking-wider text-muted-foreground">
           {label}
@@ -425,61 +459,62 @@ function Sparkline({
   );
 }
 
-function DualSparkline({
+function MovementBarChart({
   buckets,
   className,
 }: {
   buckets: DailyBucket[];
   className?: string;
 }) {
-  const maxIn = Math.max(1, ...buckets.map((b) => b.inCount));
-  const maxOut = Math.max(1, ...buckets.map((b) => b.outCount));
-  const max = Math.max(maxIn, maxOut);
   const width = 100;
-  const height = 40;
-  const step = buckets.length > 1 ? width / (buckets.length - 1) : 0;
-
-  function path(values: number[]): string {
-    const coords = values.map((v, i) => {
-      const x = i * step;
-      const y = height - (v / max) * (height - 4) - 2;
-      return `${x},${y}`;
-    });
-    return coords.length ? `M${coords.join(" L")}` : "";
-  }
+  const height = 48;
+  const max = Math.max(
+    1,
+    ...buckets.map((b) => Math.max(b.inCount, b.outCount)),
+  );
+  const groupWidth = buckets.length > 0 ? width / buckets.length : width;
+  const barWidth = groupWidth * 0.3;
+  const gap = groupWidth * 0.1;
+  const lead = (groupWidth - (barWidth * 2 + gap)) / 2;
 
   return (
     <svg
       viewBox={`0 0 ${width} ${height}`}
       preserveAspectRatio="none"
-      className={cn("h-20 w-full", className)}
+      className={cn("h-28 w-full", className)}
       aria-hidden
     >
-      <defs>
-        <linearGradient id="inGrad" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="hsl(var(--success))" stopOpacity="0.25" />
-          <stop offset="100%" stopColor="hsl(var(--success))" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path
-        d={`${path(buckets.map((b) => b.inCount))} L${width},${height} L0,${height} Z`}
-        fill="url(#inGrad)"
+      <line
+        x1="0"
+        y1={height}
+        x2={width}
+        y2={height}
+        stroke="hsl(var(--border))"
+        strokeWidth="0.5"
       />
-      <path
-        d={path(buckets.map((b) => b.inCount))}
-        fill="none"
-        stroke="hsl(var(--success))"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <path
-        d={path(buckets.map((b) => b.outCount))}
-        fill="none"
-        stroke="hsl(var(--destructive))"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeDasharray="2 2"
-      />
+      {buckets.map((b, i) => {
+        const groupStart = i * groupWidth + lead;
+        const inHeight = (b.inCount / max) * (height - 2);
+        const outHeight = (b.outCount / max) * (height - 2);
+        return (
+          <g key={b.day}>
+            <rect
+              x={groupStart}
+              y={height - inHeight}
+              width={barWidth}
+              height={inHeight}
+              fill="hsl(var(--success))"
+            />
+            <rect
+              x={groupStart + barWidth + gap}
+              y={height - outHeight}
+              width={barWidth}
+              height={outHeight}
+              fill="hsl(var(--destructive))"
+            />
+          </g>
+        );
+      })}
     </svg>
   );
 }
