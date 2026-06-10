@@ -127,6 +127,7 @@ interface SeedItem {
   unitCode: string;
   barcode?: string | null;
   minStock: number;
+  tracksBatch?: boolean;
 }
 
 const ITEMS: SeedItem[] = [
@@ -170,6 +171,7 @@ const ITEMS: SeedItem[] = [
     unitCode: "BOX",
     barcode: "8991234500015",
     minStock: 20,
+    tracksBatch: true,
   },
   {
     sku: "SMB-002",
@@ -178,6 +180,7 @@ const ITEMS: SeedItem[] = [
     unitCode: "BOX",
     barcode: "8991234500022",
     minStock: 30,
+    tracksBatch: true,
   },
   {
     sku: "SMB-003",
@@ -186,6 +189,7 @@ const ITEMS: SeedItem[] = [
     unitCode: "KG",
     barcode: "8991234500039",
     minStock: 50,
+    tracksBatch: true,
   },
   {
     sku: "ATK-001",
@@ -212,9 +216,37 @@ const ITEMS: SeedItem[] = [
   },
 ];
 
+// Batch/lot demo data for the tracksBatch items above. Expiry windows are
+// chosen to exercise every batch status: healthy, expiring soon (<= 30 days),
+// and already expired.
+interface SeedBatch {
+  itemSku: string;
+  batchCode: string;
+  mfgDaysAgo: number;
+  expiryDaysFromNow: number;
+  note?: string;
+}
+
+const ITEM_BATCHES: SeedBatch[] = [
+  // Beras: one lot expiring soon, one already expired.
+  { itemSku: "SMB-001", batchCode: "BRS-2406A", mfgDaysAgo: 60, expiryDaysFromNow: 15, note: "Lot mau kadaluarsa" },
+  { itemSku: "SMB-001", batchCode: "BRS-2405B", mfgDaysAgo: 120, expiryDaysFromNow: -2, note: "Lot sudah kadaluarsa" },
+  // Minyak goreng: one expiring soon, one healthy.
+  { itemSku: "SMB-002", batchCode: "MGR-2406", mfgDaysAgo: 30, expiryDaysFromNow: 20 },
+  { itemSku: "SMB-002", batchCode: "MGR-2407", mfgDaysAgo: 10, expiryDaysFromNow: 200 },
+  // Gula: single healthy lot.
+  { itemSku: "SMB-003", batchCode: "GLA-2406", mfgDaysAgo: 40, expiryDaysFromNow: 90 },
+];
+
 function daysAgo(n: number): Date {
   const d = new Date();
   d.setUTCDate(d.getUTCDate() - n);
+  return d;
+}
+
+function daysFromNow(n: number): Date {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + n);
   return d;
 }
 
@@ -378,6 +410,7 @@ async function main(): Promise<void> {
       unitId,
       barcode: i.barcode ?? null,
       minStock: i.minStock,
+      tracksBatch: i.tracksBatch ?? false,
       isActive: true,
     };
     const row = await prisma.item.upsert({
@@ -389,12 +422,50 @@ async function main(): Promise<void> {
         unitId,
         barcode: i.barcode ?? null,
         minStock: i.minStock,
+        tracksBatch: i.tracksBatch ?? false,
         isActive: true,
       },
       create: data,
     });
     itemBySku.set(i.sku, row.id);
   }
+
+  // --- Batch / lot demo data (tracksBatch items) --------------------------
+  // Idempotent without relying on the compound-unique key name: look the row
+  // up by (org, item, batchCode) and update-or-create.
+  const batchIdByCode = new Map<string, string>();
+  for (const b of ITEM_BATCHES) {
+    const itemId = itemBySku.get(b.itemSku);
+    if (!itemId) throw new Error(`Item ${b.itemSku} missing while seeding batch ${b.batchCode}`);
+    const mfgDate = daysAgo(b.mfgDaysAgo);
+    const expiryDate = daysFromNow(b.expiryDaysFromNow);
+    const existing = await prisma.itemBatch.findFirst({
+      where: { organizationId: org.id, itemId, batchCode: b.batchCode },
+      select: { id: true },
+    });
+    if (existing) {
+      await prisma.itemBatch.update({
+        where: { id: existing.id },
+        data: { mfgDate, expiryDate, note: b.note ?? null, isActive: true },
+      });
+      batchIdByCode.set(b.batchCode, existing.id);
+    } else {
+      const created = await prisma.itemBatch.create({
+        data: {
+          organizationId: org.id,
+          itemId,
+          batchCode: b.batchCode,
+          mfgDate,
+          expiryDate,
+          note: b.note ?? null,
+          isActive: true,
+        },
+        select: { id: true },
+      });
+      batchIdByCode.set(b.batchCode, created.id);
+    }
+  }
+  console.log(`Seeded ${ITEM_BATCHES.length} item batches.`);
 
   // --- Sample transactions (only when none yet) ---------------------------
   const existingReceipts = await prisma.goodsReceipt.count({
@@ -431,7 +502,7 @@ async function main(): Promise<void> {
       ],
     });
 
-    // 2) Sembako restock 5 days ago.
+    // 2) Sembako restock 5 days ago — batch-tracked lots.
     await postGoodsReceipt({
       organizationId: org.id,
       orgSlug: org.slug,
@@ -439,11 +510,13 @@ async function main(): Promise<void> {
       warehouseId: mainWarehouseId,
       supplierId: supplierSembako?.id ?? null,
       occurredAt: daysAgo(5),
-      note: "Restock sembako mingguan.",
+      note: "Restock sembako mingguan (per lot).",
       lines: [
-        { itemId: itemBySku.get("SMB-001")!, qty: 60 },
-        { itemId: itemBySku.get("SMB-002")!, qty: 80 },
-        { itemId: itemBySku.get("SMB-003")!, qty: 120 },
+        { itemId: itemBySku.get("SMB-001")!, batchId: batchIdByCode.get("BRS-2406A")!, qty: 40 },
+        { itemId: itemBySku.get("SMB-001")!, batchId: batchIdByCode.get("BRS-2405B")!, qty: 20 },
+        { itemId: itemBySku.get("SMB-002")!, batchId: batchIdByCode.get("MGR-2406")!, qty: 30 },
+        { itemId: itemBySku.get("SMB-002")!, batchId: batchIdByCode.get("MGR-2407")!, qty: 50 },
+        { itemId: itemBySku.get("SMB-003")!, batchId: batchIdByCode.get("GLA-2406")!, qty: 120 },
       ],
     });
 
@@ -463,7 +536,7 @@ async function main(): Promise<void> {
       ],
     });
 
-    // 4) Outbound — customer pickup 2 days ago.
+    // 4) Outbound — customer pickup 2 days ago (issues from a tracked lot).
     await postGoodsIssue({
       organizationId: org.id,
       orgSlug: org.slug,
@@ -475,7 +548,7 @@ async function main(): Promise<void> {
       lines: [
         { itemId: itemBySku.get("ELK-001")!, qty: 4 },
         { itemId: itemBySku.get("ELK-003")!, qty: 10 },
-        { itemId: itemBySku.get("SMB-002")!, qty: 12 },
+        { itemId: itemBySku.get("SMB-002")!, batchId: batchIdByCode.get("MGR-2406")!, qty: 12 },
       ],
     });
 
