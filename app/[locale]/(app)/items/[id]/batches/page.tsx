@@ -73,7 +73,7 @@ export default async function ItemBatchesPage({ params }: PageProps) {
       <div>
         <Link
           href={`/${locale}/items`}
-          className="text-xs text-muted-foreground hover:underline"
+          className="inline-flex items-center text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
           ← {tCommon("back")}
         </Link>
@@ -84,13 +84,13 @@ export default async function ItemBatchesPage({ params }: PageProps) {
       </div>
 
       {!item.tracksBatch ? (
-        <Card>
+        <Card className="shadow-soft">
           <CardContent className="p-6 text-sm text-muted-foreground">
             {t("notTracked")}
           </CardContent>
         </Card>
       ) : (
-        <Card>
+        <Card className="overflow-hidden shadow-soft">
           <CardHeader>
             <CardTitle>{t("tableTitle")}</CardTitle>
           </CardHeader>
@@ -101,12 +101,12 @@ export default async function ItemBatchesPage({ params }: PageProps) {
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                   <thead>
-                    <tr className="border-b border-border bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
-                      <th className="px-4 py-2 font-medium">{t("colBatchCode")}</th>
-                      <th className="px-4 py-2 font-medium">{t("colMfgDate")}</th>
-                      <th className="px-4 py-2 font-medium">{t("colExpiryDate")}</th>
-                      <th className="px-4 py-2 text-right font-medium">{t("colOnHand")}</th>
-                      <th className="px-4 py-2 font-medium">{t("colStatus")}</th>
+                    <tr className="border-b border-border bg-muted/40 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+                      <th className="px-4 py-2.5 font-medium">{t("colBatchCode")}</th>
+                      <th className="px-4 py-2.5 font-medium">{t("colMfgDate")}</th>
+                      <th className="px-4 py-2.5 font-medium">{t("colExpiryDate")}</th>
+                      <th className="px-4 py-2.5 text-right font-medium">{t("colOnHand")}</th>
+                      <th className="px-4 py-2.5 font-medium">{t("colStatus")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -128,14 +128,17 @@ export default async function ItemBatchesPage({ params }: PageProps) {
                         }
                       }
                       return (
-                        <tr key={b.id} className="border-b border-border last:border-0">
-                          <td className="px-4 py-2 font-mono text-xs">{b.batchCode}</td>
-                          <td className="px-4 py-2">{formatDate(b.mfgDate, locale)}</td>
-                          <td className="px-4 py-2">{formatDate(b.expiryDate, locale)}</td>
-                          <td className="px-4 py-2 text-right tabular-nums">
+                        <tr
+                          key={b.id}
+                          className="border-b border-border transition-colors last:border-0 hover:bg-muted/30"
+                        >
+                          <td className="px-4 py-2.5 font-mono text-xs">{b.batchCode}</td>
+                          <td className="px-4 py-2.5">{formatDate(b.mfgDate, locale)}</td>
+                          <td className="px-4 py-2.5">{formatDate(b.expiryDate, locale)}</td>
+                          <td className="px-4 py-2.5 text-right font-medium tabular-nums">
                             {onHand} {item.unit.code}
                           </td>
-                          <td className="px-4 py-2">
+                          <td className="px-4 py-2.5">
                             <Badge variant={statusVariant}>{statusLabel}</Badge>
                           </td>
                         </tr>
