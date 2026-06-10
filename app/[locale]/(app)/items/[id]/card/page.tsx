@@ -75,13 +75,16 @@ export default async function ItemStockCardPage({ params, searchParams }: PagePr
   if (warehouseId) queryString.set("warehouseId", warehouseId);
   const exportHref = `/api/exports/stock-card/${id}.xlsx?${queryString.toString()}`;
 
+  const fieldClass =
+    "h-9 rounded-md border border-border bg-white px-3 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring";
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <Link
             href={`/${locale}/items`}
-            className="text-xs text-muted-foreground hover:underline"
+            className="inline-flex items-center text-xs text-muted-foreground transition-colors hover:text-foreground"
           >
             ← {tCommon("back")}
           </Link>
@@ -100,13 +103,13 @@ export default async function ItemStockCardPage({ params, searchParams }: PagePr
         </div>
         <a
           href={exportHref}
-          className="rounded-md border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted/40"
+          className="rounded-md border border-border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-muted/40"
         >
           {t("exportExcel")}
         </a>
       </div>
 
-      <Card>
+      <Card className="shadow-soft">
         <CardContent className="flex flex-wrap items-center gap-6 p-6">
           <div className="shrink-0 rounded-lg border border-border bg-white p-3">
             <ItemQr value={qrValue} size={128} />
@@ -130,14 +133,18 @@ export default async function ItemStockCardPage({ params, searchParams }: PagePr
         </CardContent>
       </Card>
 
-      <form className="flex flex-wrap items-end gap-3" action="" method="GET">
+      <form
+        className="flex flex-wrap items-end gap-3 rounded-lg border border-border bg-card p-4 shadow-soft"
+        action=""
+        method="GET"
+      >
         <div className="space-y-1">
           <label className="block text-xs text-muted-foreground">{t("from")}</label>
           <input
             type="date"
             name="from"
             defaultValue={range.fromInput}
-            className="h-9 rounded-md border border-border px-3 text-sm"
+            className={fieldClass}
           />
         </div>
         <div className="space-y-1">
@@ -146,7 +153,7 @@ export default async function ItemStockCardPage({ params, searchParams }: PagePr
             type="date"
             name="to"
             defaultValue={range.toInput}
-            className="h-9 rounded-md border border-border px-3 text-sm"
+            className={fieldClass}
           />
         </div>
         <div className="space-y-1">
@@ -154,7 +161,7 @@ export default async function ItemStockCardPage({ params, searchParams }: PagePr
           <select
             name="warehouseId"
             defaultValue={warehouseId ?? ""}
-            className="h-9 rounded-md border border-border bg-white px-3 text-sm"
+            className={fieldClass}
           >
             <option value="">{t("allWarehouses")}</option>
             {warehouses.map((w) => (
@@ -166,14 +173,14 @@ export default async function ItemStockCardPage({ params, searchParams }: PagePr
         </div>
         <button
           type="submit"
-          className="h-9 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          className="h-9 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
           {tCommon("apply")}
         </button>
       </form>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Card>
+        <Card className="shadow-soft">
           <CardHeader>
             <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {t("openingBalance")}
@@ -186,7 +193,7 @@ export default async function ItemStockCardPage({ params, searchParams }: PagePr
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="shadow-soft">
           <CardHeader>
             <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {t("entriesCount")}
@@ -198,7 +205,7 @@ export default async function ItemStockCardPage({ params, searchParams }: PagePr
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="shadow-soft">
           <CardHeader>
             <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {t("closingBalance")}
@@ -213,18 +220,18 @@ export default async function ItemStockCardPage({ params, searchParams }: PagePr
         </Card>
       </div>
 
-      <div className="rounded-md border border-border bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft">
         <table className="w-full text-sm">
-          <thead className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
+          <thead className="border-b border-border bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
             <tr>
-              <th className="px-4 py-2">{tTx("occurredAt")}</th>
-              <th className="px-4 py-2">{tTx("warehouse")}</th>
-              <th className="px-4 py-2">{t("type")}</th>
-              <th className="px-4 py-2">{tTx("docNo")}</th>
-              <th className="px-4 py-2 text-right">{t("in")}</th>
-              <th className="px-4 py-2 text-right">{t("out")}</th>
-              <th className="px-4 py-2 text-right">{t("balance")}</th>
-              <th className="px-4 py-2">{tTx("noteLabel")}</th>
+              <th className="px-4 py-2.5">{tTx("occurredAt")}</th>
+              <th className="px-4 py-2.5">{tTx("warehouse")}</th>
+              <th className="px-4 py-2.5">{t("type")}</th>
+              <th className="px-4 py-2.5">{tTx("docNo")}</th>
+              <th className="px-4 py-2.5 text-right">{t("in")}</th>
+              <th className="px-4 py-2.5 text-right">{t("out")}</th>
+              <th className="px-4 py-2.5 text-right">{t("balance")}</th>
+              <th className="px-4 py-2.5">{tTx("noteLabel")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -238,17 +245,17 @@ export default async function ItemStockCardPage({ params, searchParams }: PagePr
               card.entries.map((e) => {
                 const isIn = e.qtyDelta > 0;
                 return (
-                  <tr key={e.id} className="hover:bg-muted/40">
-                    <td className="px-4 py-2 text-muted-foreground">
+                  <tr key={e.id} className="transition-colors hover:bg-muted/30">
+                    <td className="px-4 py-2.5 text-muted-foreground">
                       {e.occurredAt.toISOString().slice(0, 16).replace("T", " ")}
                     </td>
-                    <td className="px-4 py-2 text-muted-foreground">{e.warehouseCode}</td>
-                    <td className="px-4 py-2">
+                    <td className="px-4 py-2.5 text-muted-foreground">{e.warehouseCode}</td>
+                    <td className="px-4 py-2.5">
                       <Badge variant={moveTypeVariant[e.moveType] ?? "neutral"}>
                         {t(`moveType.${e.moveType}` as const)}
                       </Badge>
                     </td>
-                    <td className="px-4 py-2 font-mono text-xs">
+                    <td className="px-4 py-2.5 font-mono text-xs">
                       {e.refDocNo ? (
                         <Link
                           href={refLink(locale, e.refType, e.refId)}
@@ -260,16 +267,16 @@ export default async function ItemStockCardPage({ params, searchParams }: PagePr
                         "—"
                       )}
                     </td>
-                    <td className="px-4 py-2 text-right font-mono">
+                    <td className="px-4 py-2.5 text-right font-mono">
                       {isIn ? e.qtyDelta.toLocaleString(locale) : ""}
                     </td>
-                    <td className="px-4 py-2 text-right font-mono">
+                    <td className="px-4 py-2.5 text-right font-mono">
                       {!isIn ? Math.abs(e.qtyDelta).toLocaleString(locale) : ""}
                     </td>
-                    <td className="px-4 py-2 text-right font-mono font-medium">
+                    <td className="px-4 py-2.5 text-right font-mono font-medium">
                       {e.balanceAfter.toLocaleString(locale)}
                     </td>
-                    <td className="px-4 py-2 text-muted-foreground">{e.note ?? "—"}</td>
+                    <td className="px-4 py-2.5 text-muted-foreground">{e.note ?? "—"}</td>
                   </tr>
                 );
               })
