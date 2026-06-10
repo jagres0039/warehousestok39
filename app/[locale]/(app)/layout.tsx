@@ -5,7 +5,9 @@ import { Boxes } from "lucide-react";
 import { requireTenantSession } from "@/lib/session";
 import { signOutAction } from "./actions";
 import { SidebarNav, MobileNav } from "@/components/app/sidebar-nav";
+import { NotificationsBell } from "@/components/app/notifications-bell";
 import { canAdminister } from "@/lib/role-guard";
+import { prisma } from "@/lib/prisma";
 import { UserMenu } from "@/components/app/user-menu";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Badge, roleBadgeVariant } from "@/components/ui/badge";
@@ -68,7 +70,9 @@ export default async function AppLayout({ children, params }: LayoutProps) {
         { href: `/${locale}/stock`, key: "stock" },
         { href: `/${locale}/reports/movements`, key: "movements" },
         { href: `/${locale}/reports/low-stock`, key: "lowStock" },
+        { href: `/${locale}/reports/expiring-soon`, key: "expiringSoon" },
         { href: `/${locale}/reports`, key: "reports" },
+        { href: `/${locale}/notifications`, key: "notifications" },
         { href: `/${locale}/settings`, key: "settings" },
       ],
     },
@@ -84,6 +88,40 @@ export default async function AppLayout({ children, params }: LayoutProps) {
       items: [{ href: `/${locale}/imports`, key: "imports" }],
     });
   }
+
+  const [unreadCount, recent] = await Promise.all([
+    prisma.notification.count({
+      where: {
+        organizationId: session.organizationId,
+        isRead: false,
+        isResolved: false,
+      },
+    }),
+    prisma.notification.findMany({
+      where: { organizationId: session.organizationId },
+      orderBy: [{ isRead: "asc" }, { createdAt: "desc" }],
+      take: 10,
+      include: {
+        item: { select: { id: true, sku: true } },
+        batch: { select: { id: true } },
+      },
+    }),
+  ]);
+
+  const notificationItems = recent.map((n) => ({
+    id: n.id,
+    type: n.type,
+    severity: n.severity,
+    title: n.title,
+    body: n.body,
+    href: n.item
+      ? n.batch
+        ? `/${locale}/items/${n.item.id}/batches`
+        : `/${locale}/items/${n.item.id}/card`
+      : null,
+    isRead: n.isRead,
+    createdAt: n.createdAt.toISOString(),
+  }));
 
   const sections = navDef.map((section) => ({
     key: section.key,
@@ -130,6 +168,11 @@ export default async function AppLayout({ children, params }: LayoutProps) {
               {otherLocale.toUpperCase()}
             </Link>
             <ThemeToggle label={t("themeToggle")} />
+            <NotificationsBell
+              locale={locale}
+              initialUnread={unreadCount}
+              initialItems={notificationItems}
+            />
             <UserMenu
               name={session.name || session.email}
               email={session.email}
@@ -146,10 +189,10 @@ export default async function AppLayout({ children, params }: LayoutProps) {
       <div className="flex flex-1">
         <SidebarNav
           sections={sections}
-          collapseLabels=
+          collapseLabels={ {
             collapse: t("collapseSidebar"),
             expand: t("expandSidebar"),
-          
+          } }
         />
         <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
           <div className="mx-auto w-full max-w-6xl">{children}</div>
