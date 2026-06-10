@@ -30,12 +30,14 @@ export function CreateOpnameForm({ locale, warehouses, defaultWarehouseId }: Pro
   );
 
   return (
-    <Card>
+    <Card className="shadow-soft">
       <form action={formAction}>
         <input type="hidden" name="locale" value={locale} />
         <CardContent className="space-y-4">
           {state?.error === "INVALID_REF" && (
-            <p className="text-sm text-red-600">{t("errInvalidRef")}</p>
+            <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {t("errInvalidRef")}
+            </p>
           )}
 
           <div className="space-y-1.5">
@@ -44,7 +46,7 @@ export function CreateOpnameForm({ locale, warehouses, defaultWarehouseId }: Pro
               id="warehouseId"
               name="warehouseId"
               defaultValue={defaultWarehouseId}
-              className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm"
+              className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring"
               required
             >
               {warehouses.map((w) => (
