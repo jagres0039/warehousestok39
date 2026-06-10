@@ -67,7 +67,7 @@ function BatchPicker({ value, onChange, batches, required, placeholder, showOnHa
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="h-9 w-full rounded-md border border-border bg-background px-2 text-sm"
+      className="h-9 w-full rounded-md border border-border bg-background px-2 text-sm transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring"
       required={required}
     >
       <option value="">{placeholder}</option>
@@ -160,7 +160,7 @@ function ItemPicker({ value, onChange, items, noItemsLabel, scanLabel, onOpenSca
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-9 w-full rounded-md border border-border bg-background px-2 text-sm"
+        className="h-9 w-full rounded-md border border-border bg-background px-2 text-sm transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring"
         required
       >
         {items.length === 0 ? (
@@ -178,7 +178,7 @@ function ItemPicker({ value, onChange, items, noItemsLabel, scanLabel, onOpenSca
         onClick={onOpenScan}
         aria-label={scanLabel}
         title={scanLabel}
-        className="inline-flex h-9 shrink-0 items-center justify-center rounded-md border border-border bg-background px-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+        className="inline-flex h-9 shrink-0 items-center justify-center rounded-md border border-border bg-background px-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
       >
         <ScanLine className="h-4 w-4" aria-hidden="true" />
       </button>
@@ -306,7 +306,7 @@ export function GoodsReceiptForm({
   );
 
   return (
-    <Card>
+    <Card className="shadow-soft">
       <CardHeader>
         <CardTitle>{t("receiptCreateTitle")}</CardTitle>
       </CardHeader>
@@ -315,13 +315,13 @@ export function GoodsReceiptForm({
         <input type="hidden" name="lines" value={linesPayload} />
         <CardContent className="space-y-6">
           {state?.error === "EMPTY_LINES" && (
-            <p className="text-sm text-red-600">{t("errEmptyLines")}</p>
+            <p className="text-sm text-destructive">{t("errEmptyLines")}</p>
           )}
           {state?.error === "INVALID_QTY" && (
-            <p className="text-sm text-red-600">{t("errInvalidQty")}</p>
+            <p className="text-sm text-destructive">{t("errInvalidQty")}</p>
           )}
           {state?.error === "INVALID_REF" && (
-            <p className="text-sm text-red-600">{t("errInvalidRef")}</p>
+            <p className="text-sm text-destructive">{t("errInvalidRef")}</p>
           )}
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -331,7 +331,7 @@ export function GoodsReceiptForm({
                 id="warehouseId"
                 name="warehouseId"
                 defaultValue={defaultWarehouseId ?? warehouses[0]?.id ?? ""}
-                className="h-9 w-full rounded-md border border-border bg-white px-3 text-sm"
+                className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring"
                 required
               >
                 {warehouses.map((w) => (
@@ -347,7 +347,7 @@ export function GoodsReceiptForm({
                 id="supplierId"
                 name="supplierId"
                 defaultValue=""
-                className="h-9 w-full rounded-md border border-border bg-white px-3 text-sm"
+                className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 <option value="">{tMaster("categoryNone")}</option>
                 {suppliers.map((s) => (
@@ -383,12 +383,12 @@ export function GoodsReceiptForm({
               <button
                 type="button"
                 onClick={addLine}
-                className="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted/40"
+                className="rounded-md border border-border px-3 py-1 text-sm transition-colors hover:bg-muted/40"
               >
                 + {t("addLine")}
               </button>
             </div>
-            <div className="overflow-hidden rounded-md border border-border">
+            <div className="overflow-hidden rounded-xl border border-border shadow-soft">
               <table className="w-full text-sm">
                 <thead className="bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
@@ -404,7 +404,7 @@ export function GoodsReceiptForm({
                     const item = itemById.get(l.itemId);
                     const tracks = !!item?.tracksBatch;
                     return (
-                    <tr key={l.uid}>
+                    <tr key={l.uid} className="transition-colors hover:bg-muted/30">
                       <td className="px-3 py-2">
                         <ItemPicker
                           value={l.itemId}
@@ -462,7 +462,7 @@ export function GoodsReceiptForm({
                           type="button"
                           onClick={() => removeLine(l.uid)}
                           disabled={lines.length === 1}
-                          className="text-xs text-red-600 hover:underline disabled:opacity-30"
+                          className="text-xs text-destructive hover:underline disabled:opacity-30"
                         >
                           {tCommon("delete")}
                         </button>
@@ -574,7 +574,7 @@ export function GoodsIssueForm({
   );
 
   return (
-    <Card>
+    <Card className="shadow-soft">
       <CardHeader>
         <CardTitle>{t("issueCreateTitle")}</CardTitle>
       </CardHeader>
@@ -583,16 +583,16 @@ export function GoodsIssueForm({
         <input type="hidden" name="lines" value={linesPayload} />
         <CardContent className="space-y-6">
           {state?.error === "EMPTY_LINES" && (
-            <p className="text-sm text-red-600">{t("errEmptyLines")}</p>
+            <p className="text-sm text-destructive">{t("errEmptyLines")}</p>
           )}
           {state?.error === "INVALID_QTY" && (
-            <p className="text-sm text-red-600">{t("errInvalidQty")}</p>
+            <p className="text-sm text-destructive">{t("errInvalidQty")}</p>
           )}
           {state?.error === "INSUFFICIENT_STOCK" && (
-            <p className="text-sm text-red-600">{t("errInsufficientStock")}</p>
+            <p className="text-sm text-destructive">{t("errInsufficientStock")}</p>
           )}
           {state?.error === "INVALID_REF" && (
-            <p className="text-sm text-red-600">{t("errInvalidRef")}</p>
+            <p className="text-sm text-destructive">{t("errInvalidRef")}</p>
           )}
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -602,7 +602,7 @@ export function GoodsIssueForm({
                 id="warehouseId"
                 name="warehouseId"
                 defaultValue={defaultWarehouseId ?? warehouses[0]?.id ?? ""}
-                className="h-9 w-full rounded-md border border-border bg-white px-3 text-sm"
+                className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring"
                 required
               >
                 {warehouses.map((w) => (
@@ -618,7 +618,7 @@ export function GoodsIssueForm({
                 id="customerId"
                 name="customerId"
                 defaultValue=""
-                className="h-9 w-full rounded-md border border-border bg-white px-3 text-sm"
+                className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 <option value="">{tMaster("categoryNone")}</option>
                 {customers.map((c) => (
@@ -654,12 +654,12 @@ export function GoodsIssueForm({
               <button
                 type="button"
                 onClick={addLine}
-                className="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted/40"
+                className="rounded-md border border-border px-3 py-1 text-sm transition-colors hover:bg-muted/40"
               >
                 + {t("addLine")}
               </button>
             </div>
-            <div className="overflow-hidden rounded-md border border-border">
+            <div className="overflow-hidden rounded-xl border border-border shadow-soft">
               <table className="w-full text-sm">
                 <thead className="bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
@@ -675,7 +675,7 @@ export function GoodsIssueForm({
                     const item = itemById.get(l.itemId);
                     const tracks = !!item?.tracksBatch;
                     return (
-                    <tr key={l.uid}>
+                    <tr key={l.uid} className="transition-colors hover:bg-muted/30">
                       <td className="px-3 py-2">
                         <ItemPicker
                           value={l.itemId}
@@ -725,7 +725,7 @@ export function GoodsIssueForm({
                           type="button"
                           onClick={() => removeLine(l.uid)}
                           disabled={lines.length === 1}
-                          className="text-xs text-red-600 hover:underline disabled:opacity-30"
+                          className="text-xs text-destructive hover:underline disabled:opacity-30"
                         >
                           {tCommon("delete")}
                         </button>
@@ -862,7 +862,7 @@ export function StockAdjustmentForm({
   );
 
   return (
-    <Card>
+    <Card className="shadow-soft">
       <CardHeader>
         <CardTitle>{t("adjustmentCreateTitle")}</CardTitle>
       </CardHeader>
@@ -871,16 +871,16 @@ export function StockAdjustmentForm({
         <input type="hidden" name="lines" value={linesPayload} />
         <CardContent className="space-y-6">
           {state?.error === "EMPTY_LINES" && (
-            <p className="text-sm text-red-600">{t("errEmptyLines")}</p>
+            <p className="text-sm text-destructive">{t("errEmptyLines")}</p>
           )}
           {state?.error === "INVALID_QTY" && (
-            <p className="text-sm text-red-600">{t("errInvalidQty")}</p>
+            <p className="text-sm text-destructive">{t("errInvalidQty")}</p>
           )}
           {state?.error === "INSUFFICIENT_STOCK" && (
-            <p className="text-sm text-red-600">{t("errInsufficientStock")}</p>
+            <p className="text-sm text-destructive">{t("errInsufficientStock")}</p>
           )}
           {state?.error === "INVALID_REF" && (
-            <p className="text-sm text-red-600">{t("errInvalidRef")}</p>
+            <p className="text-sm text-destructive">{t("errInvalidRef")}</p>
           )}
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -890,7 +890,7 @@ export function StockAdjustmentForm({
                 id="warehouseId"
                 name="warehouseId"
                 defaultValue={defaultWarehouseId ?? warehouses[0]?.id ?? ""}
-                className="h-9 w-full rounded-md border border-border bg-white px-3 text-sm"
+                className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring"
                 required
               >
                 {warehouses.map((w) => (
@@ -923,12 +923,12 @@ export function StockAdjustmentForm({
               <button
                 type="button"
                 onClick={addLine}
-                className="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted/40"
+                className="rounded-md border border-border px-3 py-1 text-sm transition-colors hover:bg-muted/40"
               >
                 + {t("addLine")}
               </button>
             </div>
-            <div className="overflow-hidden rounded-md border border-border">
+            <div className="overflow-hidden rounded-xl border border-border shadow-soft">
               <table className="w-full text-sm">
                 <thead className="bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
@@ -945,7 +945,7 @@ export function StockAdjustmentForm({
                     const item = itemById.get(l.itemId);
                     const tracks = !!item?.tracksBatch;
                     return (
-                    <tr key={l.uid}>
+                    <tr key={l.uid} className="transition-colors hover:bg-muted/30">
                       <td className="px-3 py-2">
                         <ItemPicker
                           value={l.itemId}
@@ -983,7 +983,7 @@ export function StockAdjustmentForm({
                               direction: e.target.value as "IN" | "OUT",
                             })
                           }
-                          className="h-9 w-full rounded-md border border-border bg-white px-2 text-sm"
+                          className="h-9 w-full rounded-md border border-border bg-background px-2 text-sm transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring"
                         >
                           <option value="IN">{t("directionIn")}</option>
                           <option value="OUT">{t("directionOut")}</option>
@@ -1009,7 +1009,7 @@ export function StockAdjustmentForm({
                           type="button"
                           onClick={() => removeLine(l.uid)}
                           disabled={lines.length === 1}
-                          className="text-xs text-red-600 hover:underline disabled:opacity-30"
+                          className="text-xs text-destructive hover:underline disabled:opacity-30"
                         >
                           {tCommon("delete")}
                         </button>
@@ -1138,7 +1138,7 @@ export function StockTransferForm({
     "";
 
   return (
-    <Card>
+    <Card className="shadow-soft">
       <CardHeader>
         <CardTitle>{tTransfers("createTitle")}</CardTitle>
       </CardHeader>
@@ -1147,19 +1147,19 @@ export function StockTransferForm({
         <input type="hidden" name="lines" value={linesPayload} />
         <CardContent className="space-y-6">
           {state?.error === "EMPTY_LINES" && (
-            <p className="text-sm text-red-600">{t("errEmptyLines")}</p>
+            <p className="text-sm text-destructive">{t("errEmptyLines")}</p>
           )}
           {state?.error === "INVALID_QTY" && (
-            <p className="text-sm text-red-600">{t("errInvalidQty")}</p>
+            <p className="text-sm text-destructive">{t("errInvalidQty")}</p>
           )}
           {state?.error === "INSUFFICIENT_STOCK" && (
-            <p className="text-sm text-red-600">{t("errInsufficientStock")}</p>
+            <p className="text-sm text-destructive">{t("errInsufficientStock")}</p>
           )}
           {state?.error === "INVALID_REF" && (
-            <p className="text-sm text-red-600">{t("errInvalidRef")}</p>
+            <p className="text-sm text-destructive">{t("errInvalidRef")}</p>
           )}
           {state?.error === "SAME_WAREHOUSE" && (
-            <p className="text-sm text-red-600">{tTransfers("errSameWarehouse")}</p>
+            <p className="text-sm text-destructive">{tTransfers("errSameWarehouse")}</p>
           )}
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -1169,7 +1169,7 @@ export function StockTransferForm({
                 id="fromWarehouseId"
                 name="fromWarehouseId"
                 defaultValue={initialFrom}
-                className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm"
+                className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring"
                 required
               >
                 {warehouses.map((w) => (
@@ -1185,7 +1185,7 @@ export function StockTransferForm({
                 id="toWarehouseId"
                 name="toWarehouseId"
                 defaultValue={initialTo}
-                className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm"
+                className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring"
                 required
               >
                 {warehouses.map((w) => (
@@ -1221,12 +1221,12 @@ export function StockTransferForm({
               <button
                 type="button"
                 onClick={addLine}
-                className="rounded-md border border-border px-3 py-1 text-sm hover:bg-muted/40"
+                className="rounded-md border border-border px-3 py-1 text-sm transition-colors hover:bg-muted/40"
               >
                 + {t("addLine")}
               </button>
             </div>
-            <div className="overflow-hidden rounded-md border border-border">
+            <div className="overflow-hidden rounded-xl border border-border shadow-soft">
               <table className="w-full text-sm">
                 <thead className="bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
@@ -1242,7 +1242,7 @@ export function StockTransferForm({
                     const item = itemById.get(l.itemId);
                     const tracks = !!item?.tracksBatch;
                     return (
-                    <tr key={l.uid}>
+                    <tr key={l.uid} className="transition-colors hover:bg-muted/30">
                       <td className="px-3 py-2">
                         <ItemPicker
                           value={l.itemId}
@@ -1292,7 +1292,7 @@ export function StockTransferForm({
                           type="button"
                           onClick={() => removeLine(l.uid)}
                           disabled={lines.length === 1}
-                          className="text-xs text-red-600 hover:underline disabled:opacity-30"
+                          className="text-xs text-destructive hover:underline disabled:opacity-30"
                         >
                           {tCommon("delete")}
                         </button>
